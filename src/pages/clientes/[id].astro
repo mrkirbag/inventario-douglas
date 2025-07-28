@@ -11,7 +11,7 @@ const {id} = Astro.params;
         <a class="btn-add" href="/clientes">Regresar</a>
     </div>
 
-    <form action="/editarClientes" id="formulario">
+    <form id="formulario">
         <input type="text" name="nombre" id="nombre" placeholder="Nombre y Apellido" />
         <br />
         <input type="text" name="telefono" id="telefono" placeholder="Número de Teléfono" />
@@ -24,7 +24,7 @@ const {id} = Astro.params;
 
 <script type="module" is:inline>
 
-    import { mostrarError, mostrarMensaje } from '../../src/utils/mensajes.js';
+    import { mostrarError, mostrarMensaje } from '/mensajes.js';
 
     // Rellenar campos con los datos existentes
     const idCliente = location.pathname.split("/").pop();

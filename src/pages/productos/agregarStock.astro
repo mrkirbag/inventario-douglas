@@ -21,7 +21,7 @@ const {id} = Astro.params;
         <p>Precio de venta por unidad: <span id="venta" class="span"></span> USD</p>
     </div>
 
-    <form action="/agregarStock" id="formulario">
+    <form id="formulario">
         <input type="number" name="stockNuevo" id="stockNuevo" placeholder="¿Cuántas unidades desea agregar?" min="0"/>
         <button type="submit">Actualizar Stock</button>
     </form>
@@ -31,7 +31,7 @@ const {id} = Astro.params;
 
 <script type="module" is:inline>
 
-    import { mostrarError, mostrarMensaje } from '../../src/utils/mensajes.js';
+    import { mostrarError, mostrarMensaje } from '/mensajes.js';
 
     // Rellenar campos con los datos existentes
     const params = new URLSearchParams(window.location.search);
