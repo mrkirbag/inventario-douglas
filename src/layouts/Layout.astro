@@ -1,22 +1,271 @@
+---
+import Navbar from "../components/Navbar.astro"
+---
+
 <!doctype html>
-<html lang="en">
+<html lang="es">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.png" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+		<title>Sistema Inventario</title>
 	</head>
 	<body>
-		<slot />
+
+		<div class="navbar">
+			<Navbar />
+		</div>
+
+		<div class="content">
+			<slot />
+		</div>
 	</body>
 </html>
 
-<style>
-	html,
-	body {
+<style is:global>
+	*, *::before, *::after {
+		box-sizing: border-box;
 		margin: 0;
-		width: 100%;
-		height: 100%;
+		padding: 0;
+		font-family:sans-serif;
 	}
+
+	body {
+		background-color: #d3d3d3;
+	}
+
+	.navbar {
+		position: fixed;
+	}
+
+	.content {
+		max-width: 100%;
+		min-height: 100vh;
+		margin: 0 auto;
+		margin-left: 180px;
+		padding: 1rem 2rem;
+		background-color: #fff;
+		display: flex;
+		flex-direction: column;
+		gap: 20px;
+	}
+
+	@media (max-width: 768px) {
+		.content {
+			margin-left: 0;
+			padding: 1rem 1rem;
+		}
+	}
+
+	h1 {
+		text-align: center;
+		font-size: 2rem;
+		margin: 1rem 0;
+	}
+
+	.btn-add_container {
+		background: #1f2937;
+		border-radius: 5px;
+		max-width: 150px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+
+		& .btn-add {
+			padding: .35rem .75rem;
+			width: 100%;
+			text-align: center;
+			color: #fff;
+			text-decoration: none;
+			font-size: .9rem;
+			font-weight: 600;
+		}
+
+		&:hover {
+			background: #4b4b8a;
+		}
+	}
+
+	.input-busqueda_container {
+		display: flex;
+		justify-content: center;
+		margin-bottom: 2rem;
+		& input {
+			width: 100%;
+			max-width: 400px;
+			padding: .5rem;
+			border: 1px solid #ccc;
+			border-radius: 7px;
+			font-size: .9rem;
+
+			&:focus {
+				outline: none;
+				border: 1.5px solid #1f2937;
+			}
+		}
+	}
+
+	table {
+		width: 100%;
+		border-collapse: collapse;
+		margin-bottom: .5rem;
+		table-layout: fixed;
+
+		& th {
+			background-color: #f2f2f2;
+			font-weight: bold;
+			padding: 1rem;
+			text-align: left;
+		}
+
+		tr {
+			border-bottom: 1px solid #ddd;
+
+			&:last-child {
+				border-bottom: none;
+			}
+			&:hover {
+				background-color: #f7f7f7;
+			}
+		}
+
+		td {
+			padding: .75rem;
+			text-align: left;
+			font-size: .9rem;
+		}
+
+		.acciones {
+			display: flex;
+			gap: 10px;
+
+			& button {
+				color: #fff;
+				font-weight: 700;
+				border: none;
+				padding: .25rem .5rem;
+				border-radius: 5px;
+
+				&:hover {
+					cursor: pointer;
+				}
+			}
+
+			& .btn-clave, .btn-stock {
+				background: #1f2937;
+
+				&:hover {
+					background-color: #4b4b8a;
+				}
+			}
+
+			& .btn-eliminar {
+				background-color: #ff4d4d;
+
+				&:hover {
+					background-color: #a51515;
+				}
+			}
+
+			& .btn-editar {
+				background-color: #4d94ff;
+
+				&:hover {
+					background-color: #1a66cc;
+				}
+			}
+
+			
+		}
+	}
+	
+	.btn-vermas_container {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		gap: 20px;
+
+		& button {
+			background-color: #1f2937;
+			color: #fff;
+			border-radius: 5px;
+			max-width: 150px;
+			padding: .35rem .75rem;
+			text-align: center;
+			font-size: .9rem;
+			font-weight: 600;
+			border: none;
+			outline: none;
+
+			&:hover{
+				background: #4b4b8a;
+				cursor: pointer;;
+			}
+		}
+	}
+
+	form {
+		width: 100%;
+		padding: 2rem;
+		padding-bottom: 0;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		gap: 1rem;
+
+		& input {
+			width: 100%;
+			max-width: 400px;
+			padding: .5rem;
+			border: 1px solid #ccc;
+			border-radius: 7px;
+			font-size: .9rem;
+
+			&:focus {
+				outline: none;
+				border: 1.5px solid #1f2937;
+			}
+		}
+
+		& button {
+			margin-top: 1rem;
+			background-color: #1f2937;
+			color: #fff;
+			border-radius: 5px;
+			max-width: 150px;
+			padding: .5rem 1rem;
+			text-align: center;
+			font-size: .9rem;
+			font-weight: 600;
+			border: none;
+			outline: none;
+
+			&:hover{
+				background: #4b4b8a;
+				cursor: pointer;;
+			}
+
+		}
+	}
+
+	.mensaje-error {
+		margin: 0 auto;
+		color: #fff;
+		background: #a51515;
+		text-align: center;
+		font-size: 1.2rem;
+		padding: .5rem 1rem;
+	}
+
+	.mensaje-exito {
+		margin: 0 auto;
+		color: #fff;
+		background: #008000;
+		text-align: center;
+		font-size: 1.2rem;
+		padding: .5rem 1rem;
+	}
+
 </style>

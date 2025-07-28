@@ -1,11 +1,59 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
 ---
 
 <Layout>
-	<Welcome />
+
+    <main>
+        <section>
+            <h1>Sistema de Inventario y Facturación</h1>
+            <h2>Aires Acondicionados y Refrigeración</h2>
+            <h3>Douglas Sánchez</h3>
+            <img src="/logo.webp" alt="logo de aires acondicionados y refrigeracion douglas sanchez">
+        </section>
+    </main>
+	
 </Layout>
+
+<style>
+
+    main {
+        width: 100%;
+        height: 90vh;
+        padding: 2rem;
+    }
+
+    section {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: .25rem;
+        background: linear-gradient(to bottom, #f1f1f1, #fff);
+        border-radius: 10px;
+    }
+
+    img {
+        margin-top: 20px;
+        width: 300px;
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    h2 {
+        color: #1f2937;
+        font-size: 1.5rem;
+    }
+
+    h3 {
+        color: #1f2937;
+        font-weight: 700;
+        font-style: italic;
+        font-size: 1.25rem;
+    }
+
+</style>

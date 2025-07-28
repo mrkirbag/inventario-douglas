@@ -1,0 +1,143 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const {id} = Astro.params;
+---
+
+<Layout>
+    <h1>Agregar Stock</h1>
+
+
+
+    <div class="btn-add_container">
+        <a class="btn-add" href="/productos">Regresar</a>
+    </div>
+
+    <div class="informacion">
+        <span id="codigo" class="codigo"></span>
+        <h3 id="nombre" class="nombre"></h3>
+        <p>Cantidad actual en inventario: <span id="stockViejo" class="span"></span> u.</p>
+        <p>Costo por unidad: <span id="costo" class="span"></span> USD</p>
+        <p>Precio de venta por unidad: <span id="venta" class="span"></span> USD</p>
+    </div>
+
+    <form action="/agregarStock" id="formulario">
+        <input type="number" name="stockNuevo" id="stockNuevo" placeholder="¿Cuántas unidades desea agregar?" min="0"/>
+        <button type="submit">Actualizar Stock</button>
+    </form>
+
+    <div id="mensaje"></div>
+</Layout>
+
+<script type="module" is:inline>
+
+    import { mostrarError, mostrarMensaje } from '../../src/utils/mensajes.js';
+
+    // Rellenar campos con los datos existentes
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+
+    const nombre = document.querySelector("#nombre");
+    const codigo = document.querySelector("#codigo");
+    const stock = document.querySelector("#stockViejo");
+    const costo = document.querySelector("#costo");
+    const pVenta = document.querySelector("#venta");
+    
+    document.addEventListener('DOMContentLoaded', rellenarCampos);
+
+    async function rellenarCampos(){
+
+        const response = await fetch(`/api/productos/${id}`);
+        const producto = await response.json();
+
+        codigo.textContent = producto.codigo;
+        nombre.textContent = producto.nombre;
+        stock.textContent = producto.stock;
+        costo.textContent = producto.costo;
+        pVenta.textContent = producto.precio_venta;
+    }
+
+    const formulario = document.getElementById('formulario');
+
+    formulario.addEventListener('submit', async (event) => { 
+        
+        event.preventDefault();
+        
+        const stockNuevo = parseInt(document.querySelector('#stockNuevo').value);
+
+        // Validar campos vacios
+        if (stockNuevo == '') {
+            mostrarError('Debe ingresar cuantas unidades desea agregar.');
+            return;
+        }
+
+        console.log(stockNuevo)
+
+        // Confirmacion
+        const confirmar = confirm(`¿Desea agregar ${stockNuevo} unidades?`);
+        if (!confirmar) return;
+
+        // Enviar datos al servidor
+        const response = await fetch("/api/productos/agregarStock", {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ id, stockNuevo }),
+        });
+
+        // Verificar si la respuesta es exitosa
+        if (!response.ok) {
+            if (response.status === 409) {
+                const mensaje = await response.text();
+                mostrarError(mensaje);
+            } else {
+                mostrarError('Error al agregar stock nuevo: ' + response.status);
+            }
+            return;
+        }
+
+        const data = await response.json();
+        mostrarMensaje(data.message);
+        setTimeout(() => {
+            window.location.href = '/productos';
+        }, 1000);
+    });
+</script>
+
+<style>
+
+    .informacion {
+        background: #f7f7f7;
+        padding: 1rem;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+
+        & .codigo {
+            font-size: 1rem;
+            font-style: italic;
+            font-weight: 700;
+        }
+
+        & .nombre {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        & p {
+            font-size: .9rem;
+        }
+
+        & .span {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        &:hover {
+            background: #f2f2f2;
+        }
+    }
+
+</style>

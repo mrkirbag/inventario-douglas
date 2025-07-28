@@ -1,0 +1,95 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const {id} = Astro.params;
+---
+
+<Layout>
+    <h1>Editar Cliente</h1>
+
+    <div class="btn-add_container">
+        <a class="btn-add" href="/clientes">Regresar</a>
+    </div>
+
+    <form action="/editarClientes" id="formulario">
+        <input type="text" name="nombre" id="nombre" placeholder="Nombre y Apellido" />
+        <br />
+        <input type="text" name="telefono" id="telefono" placeholder="Número de Teléfono" />
+        <br />
+        <button type="submit">Actualizar</button>
+    </form>
+
+    <div id="mensaje"></div>
+</Layout>
+
+<script type="module" is:inline>
+
+    import { mostrarError, mostrarMensaje } from '../../src/utils/mensajes.js';
+
+    // Rellenar campos con los datos existentes
+    const idCliente = location.pathname.split("/").pop();
+    const nombre = document.querySelector("#nombre");
+    const telefono = document.querySelector("#telefono");
+
+    document.addEventListener('DOMContentLoaded', rellenarCampos);
+
+    async function rellenarCampos(){
+
+        const response = await fetch(`/api/clientes/${idCliente}`);
+        const cliente = await response.json();
+
+        nombre.value = cliente.nombre;
+        telefono.value = cliente.telefono;
+
+    }
+
+    const formulario = document.getElementById('formulario');
+
+    formulario.addEventListener('submit', async (event) => { 
+        
+        event.preventDefault();
+        
+        const idCliente = location.pathname.split("/").pop();
+        const nombre = document.getElementById('nombre').value;
+        const telefono = document.getElementById('telefono').value;
+
+        console.log(idCliente, nombre, telefono)
+
+        // Validar campos vacios
+        if (nombre === '' || telefono === '') {
+            mostrarError('Todos los campos son obligatorios.');
+            return;
+        }
+
+        // Validar formato de teléfono
+        const telefonoRegex = /^\d+$/; 
+        if (!telefonoRegex.test(telefono)) {
+            mostrarError('El número de teléfono debe contener solo números.');
+            return;
+        }
+
+        // Enviar datos al servidor
+        const response = await fetch("/api/clientes", {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ idCliente, nombre, telefono }),
+        });
+
+        // Verificar si la respuesta es exitosa
+        if (!response.ok) {
+
+            throw new Error('Error al actualizar cliente: ' + response.status);
+
+        } else {
+
+            mostrarMensaje('Cliente actualizado exitosamente.');
+
+            setTimeout(() => {
+                window.location.href = '/clientes';
+            }, 2000);;
+        }
+
+    });
+</script>

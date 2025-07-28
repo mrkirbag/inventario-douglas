@@ -1,0 +1,68 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout>
+    <h1>Agregar Cliente</h1>
+
+    <div class="btn-add_container">
+        <a class="btn-add" href="/clientes">Regresar</a>
+    </div>
+
+    <form action="/agregarClientes" id="formulario">
+        <input type="text" name="nombre" id="nombre" placeholder="Nombre y Apellido" />
+        <input type="text" name="telefono" id="telefono" placeholder="Número de Teléfono" />
+        <button type="submit">Agregar</button>
+    </form>
+
+    <div id="mensaje"></div>
+</Layout>
+
+<script type="module">
+
+    import { mostrarError, mostrarMensaje } from '../../src/utils/mensajes.js';
+
+    const formulario = document.getElementById('formulario');
+
+    formulario.addEventListener('submit', async (event) => { 
+        
+        event.preventDefault();
+        
+        const nombre = document.getElementById('nombre').value;
+        const telefono = document.getElementById('telefono').value;
+
+        // Validar campos vacios
+        if (nombre === '' || telefono === '') {
+            mostrarError('Todos los campos son obligatorios.');
+            return;
+        }
+
+        // Validar formato de teléfono
+        const telefonoRegex = /^\d+$/; 
+        if (!telefonoRegex.test(telefono)) {
+            mostrarError('El número de teléfono debe contener solo números.');
+            return;
+        }
+
+        // Enviar datos al servidor
+        const response = await fetch("/api/clientes", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ nombre, telefono })
+        });
+
+        // Verificar si la respuesta es exitosa
+        if (!response.ok) {
+
+            throw new Error('Error al agregar cliente: ' + response.status);
+
+        } else {
+
+            mostrarMensaje('Cliente agregado exitosamente.');
+            setTimeout(() => {
+                window.location.href = '/clientes';
+            }, 1000);
+        }
+    });

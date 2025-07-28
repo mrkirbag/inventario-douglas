@@ -1,0 +1,133 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout>
+    <h1>Usuarios Registrados en el Sistema</h1>
+
+    <div class="btn-add_container">
+        <a class="btn-add" href="/usuarios/agregarUsuarios">Agregar Usuario</a>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Usuario</th>
+                <th>Clave</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="listaUsuarios">
+        </tbody>
+    </table>
+
+    <div id="mensaje"></div>
+</Layout>
+
+<script type="module" is:inline>
+
+    import { noRegistros, mostrarMensaje } from "../src/utils/mensajes.js";
+
+    document.addEventListener('DOMContentLoaded', async () => {
+
+        // Elementos del DOM
+        const tbody = document.getElementById('listaUsuarios');
+
+        try {
+            const res = await fetch('/api/usuarios');
+            const usuarios = await res.json();
+
+            // Validar que no haya usuarios
+            if (usuarios.message) {
+                tbody.innerHTML = "";
+                noRegistros("No hay usuarios registrados.")
+                return;
+            }
+
+            usuarios.forEach(usuario => {
+
+                const tr = document.createElement('tr');
+
+                // Crea Span para la clave
+                let claveSpan = document.createElement('span');
+                claveSpan.textContent = '••••••••'; 
+
+                tr.innerHTML = `    
+                                    <td>${usuario.nombre.toUpperCase()}</td>
+                                    <td>${usuario.usuario}</td>
+                                    <td></td>
+                                `;
+
+                // Añade el span de la contraseña en el td vacio    
+                tr.children[2].appendChild(claveSpan);
+
+                // Botones de acciones
+                const tdAcciones = document.createElement('td');
+                tdAcciones.classList.add('acciones');
+
+                // Boton para ver contraseña
+                const btnVerClave = document.createElement('button');
+                btnVerClave.classList.add('btn-clave');
+                btnVerClave.textContent = '🔒';
+
+                let claveVisible = false;
+
+                btnVerClave.addEventListener('click', () => {
+                if (claveVisible) {
+                    claveSpan.textContent = '••••••••'; 
+                } else {
+                    claveSpan.textContent = usuario.contrasena; 
+                }
+                claveVisible = !claveVisible; 
+                btnVerClave.textContent = claveVisible ? '🔓' : '🔒';
+
+                });
+                tdAcciones.appendChild(btnVerClave)
+
+                // Boton de eliminar
+                const btnEliminar = document.createElement('button');
+                btnEliminar.classList.add('btn-eliminar');
+                btnEliminar.textContent = 'DEL';
+
+                btnEliminar.onclick = async () => {
+
+                    // Confirmación antes de eliminar
+                    const confirmar = confirm(`¿Estás seguro de eliminar al usuario ${usuario.nombre}?`);
+                    if (!confirmar) return;
+
+                    // Enviar solicitud de eliminación al servidor
+                    try {
+                        const res = await fetch('/api/usuarios/', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: usuario.id })
+                        });
+
+                        window.location.reload();
+                    } catch(error) {
+                        console.error("Error eliminando usuario:", error);
+                    }    
+                }
+                tdAcciones.appendChild(btnEliminar);
+
+                // Boton de Editar
+                const btnEditar = document.createElement('button');
+                btnEditar.classList.add('btn-editar');
+                btnEditar.textContent = 'EDIT';
+                btnEditar.onclick = () => {
+                    window.location.href = `/usuarios/${usuario.id}`;
+                };
+                tdAcciones.appendChild(btnEditar);
+
+                // Adjuntar acciones al tr
+                tr.appendChild(tdAcciones);
+                tbody.appendChild(tr);
+
+            });
+        } catch (err) {
+            console.error('Error al cargar usuarios:', err);
+        }
+    });
+
+</script>

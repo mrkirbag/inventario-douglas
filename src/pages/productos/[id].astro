@@ -1,0 +1,111 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const {id} = Astro.params;
+---
+
+<Layout>
+    <h1>Editar Producto</h1>
+
+    <div class="btn-add_container">
+        <a class="btn-add" href="/productos">Regresar</a>
+    </div>
+
+    <form action="/agregarProductos" id="formulario">
+        <input type="text" name="codigo" id="codigo" placeholder="Código del Producto" />
+        <input type="text" name="nombre" id="nombre" placeholder="Nombre" />
+        <input type="number" name="stock" id="stock" placeholder="Cantidad de Stock Inicial" min="0"/>
+        <input type="text" name="costo" id="costo" placeholder="Precio de Costo en USD" min="0"/>
+        <button type="submit">Actualizar</button>
+    </form>
+
+    <div id="mensaje"></div>
+</Layout>
+
+<script type="module" is:inline>
+
+    import { mostrarError, mostrarMensaje } from '../../src/utils/mensajes.js';
+
+    // Rellenar campos con los datos existentes
+    const id = location.pathname.split("/").pop();
+    const nombre = document.querySelector("#nombre");
+    const codigo = document.querySelector("#codigo");
+    const stock = document.querySelector("#stock");
+    const costo = document.querySelector("#costo");
+    
+    document.addEventListener('DOMContentLoaded', rellenarCampos);
+
+    async function rellenarCampos(){
+
+        const response = await fetch(`/api/productos/${id}`);
+        const producto = await response.json();
+
+        codigo.value = producto.codigo;
+        nombre.value = producto.nombre;
+        stock.value = producto.stock;
+        costo.value = producto.costo;
+    }
+
+    const formulario = document.getElementById('formulario');
+
+    formulario.addEventListener('submit', async (event) => { 
+        
+        event.preventDefault();
+        
+        const id = location.pathname.split("/").pop();
+        const codigo = document.getElementById('codigo').value;
+        const nombre = document.getElementById('nombre').value;
+        const stockString = document.getElementById('stock').value;
+        const costoString = document.getElementById('costo').value;
+
+        // Validar campos vacios
+        if (codigo === '' || nombre === '' || stockString === '' || costoString === '') {
+            mostrarError('Todos los campos son obligatorios.');
+            return;
+        }
+
+        // Validar stock
+        const stockValido = /^\d+$/.test(stockString);
+        if (!stockValido || parseInt(stockString) <= 0) {
+            mostrarError('La cantidad en stock debe ser un número positivo mayor a 0.');
+            return;
+        }
+
+        // Validar costo
+        const costoNum = parseFloat(costoString.replace(',', '.'));
+        if (isNaN(costoNum) || costoNum <= 0) {
+            mostrarError('El costo debe ser un número positivo mayor a 0.');
+            return;
+        }
+
+        // Parseo
+        const stock = parseInt(stockString);
+        const costo = costoNum;
+
+        // Enviar datos al servidor
+        const response = await fetch("/api/productos", {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ id, codigo, nombre, stock, costo }),
+        });
+
+        // Verificar si la respuesta es exitosa
+        if (!response.ok) {
+            if (response.status === 409) {
+                const mensaje = await response.text();
+                mostrarError(mensaje);
+            } else {
+                mostrarError('Error al editar producto: ' + response.status);
+            }
+            return;
+        }
+
+        const data = await response.json();
+        mostrarMensaje(data.message);
+        setTimeout(() => {
+            window.location.href = '/productos';
+        }, 1000);
+    });
+</script>

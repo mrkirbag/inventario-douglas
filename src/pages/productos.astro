@@ -1,0 +1,204 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout>
+    <h1>Productos en Inventario</h1>
+
+    <div class="btn-add_container">
+        <a class="btn-add" href="/productos/agregarProductos">Agregar Producto</a>
+    </div>
+
+    <div class="input-busqueda_container">
+        <input type="text" id="inputBusqueda" placeholder="Buscar producto..." />
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Codigo</th>
+                <th>Nombre</th>
+                <th>Cantidad</th>
+                <th>Precio Costo</th>
+                <th>Precio Venta</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="listaProductos">
+        </tbody>
+    </table>
+
+    <div class="btn-vermas_container">
+        <button id="btnVerAnterior" class="btn-vermas">Anterior</button>
+        <button id="btnVerMas" class="btn-vermas">Siguiente</button>
+    </div>
+
+    <div id="mensaje"></div>
+</Layout>
+
+<script type="module" is:inline>
+
+    import { noRegistros, mostrarMensaje } from "../src/utils/mensajes.js";
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // Elementos del DOM
+        const tbody = document.getElementById('listaProductos');
+        const btnVerMas = document.getElementById('btnVerMas');
+        const btnVerAnterior = document.getElementById('btnVerAnterior');
+        const busqueda = document.getElementById('inputBusqueda');
+
+        busqueda.value = '';
+
+        // Estado
+        let productosListados = [];
+        let productosFiltrados = [];
+        let paginaActual = 1;
+        const porPagina = 10;
+
+        // Mostrar lote de clientes
+        function mostrarPagina(pagina) {
+
+            const inicio = (pagina - 1) * porPagina;
+            const fin = inicio + porPagina;
+            const lote = productosFiltrados.slice(inicio, fin);
+
+            tbody.innerHTML = '';
+
+            // Si no hay clientes al buscar, mostrar mensaje
+            if (lote.length === 0) {
+                noRegistros('No se encontraron productos con ese nombre o código.');
+                btnVerMas.style.display = 'none';
+                btnVerAnterior.style.display = pagina > 1 ? 'block' : 'none';
+                return;
+            } else {
+                noRegistros("");
+            }
+
+            lote.forEach(producto => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `    
+                                    <td>${producto.codigo}</td>
+                                    <td>${producto.nombre.toUpperCase()}</td>
+                                    <td>${producto.stock} u.</td>
+                                    <td>${producto.costo.toFixed(2)} USD</td>
+                                    <td>${producto.precio_venta.toFixed(2)} USD</td>
+                                `;
+
+                // Botones de acciones
+                const tdAcciones = document.createElement('td');
+                tdAcciones.classList.add('acciones');
+
+                // Boton de agregar a stock
+                const btnStock = document.createElement('button');
+                btnStock.classList.add('btn-stock');
+                btnStock.textContent = 'ADD';
+
+                btnStock.onclick = async () => {
+                    window.location.href = `/productos/agregarStock?id=${producto.id}`;
+                }
+
+                tdAcciones.appendChild(btnStock)
+
+                // Boton de eliminar
+                const btnEliminar = document.createElement('button');
+                btnEliminar.classList.add('btn-eliminar');
+                btnEliminar.textContent = 'DEL';
+
+                btnEliminar.onclick = async () => {
+                    // Confirmación antes de eliminar
+                    const confirmar = confirm(`¿Estás seguro de eliminar al producto ${producto.codigo} - ${producto.nombre}?`);
+                    if (!confirmar) return;
+
+                    // Enviar solicitud de eliminación al servidor
+                    try {
+                        const res = await fetch('/api/productos/', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: producto.id })
+                        });
+
+                        // Actualiza el array local y repinta
+                        productosListados = productosListados.filter(c => c.id !== producto.id);
+                        productosFiltrados = aplicarFiltro(busqueda.value);
+                        mostrarPagina(1);
+                    } catch (error) {
+                        console.error("Error eliminando producto:", error);
+                    }
+            };
+            tdAcciones.appendChild(btnEliminar);
+
+            // Boton de editar
+            const btnEditar = document.createElement('button');
+            btnEditar.classList.add('btn-editar');
+            btnEditar.textContent = 'EDIT';
+            btnEditar.onclick = () => {
+                window.location.href = `/productos/${producto.id}`;
+            };
+            tdAcciones.appendChild(btnEditar);
+
+            // Adjuntar acciones al tr
+            tr.appendChild(tdAcciones);
+            tbody.appendChild(tr);
+        });
+
+        btnVerMas.style.display = productosFiltrados.length > fin ? 'block' : 'none';
+        btnVerAnterior.style.display = pagina > 1 ? 'block' : 'none';
+        }
+
+        // Filtro local por nombre
+        function aplicarFiltro(texto) {
+            if (!texto.trim()) return [...productosListados];
+
+            const filtro = texto.toLowerCase();
+
+            return productosListados.filter(producto =>
+                producto.nombre.toLowerCase().includes(filtro) ||
+                producto.codigo.toLowerCase().includes(filtro)
+            );
+        }
+
+
+        // Cargar desde el backend una sola vez
+        async function cargarProductos() {
+            try {
+                const res = await fetch('/api/productos');
+                const data = await res.json();
+
+                if (data.message) {
+                    tbody.innerHTML = "";
+                    noRegistros("No hay productos registrados.");
+                    btnVerMas.style.display = 'none';
+                    return;
+                }
+
+                productosListados = data;
+                productosFiltrados = [...productosListados];
+                mostrarPagina(paginaActual);
+            } catch (err) {
+                console.error('Error al cargar productos:', err);
+            }
+        }
+
+        // Eventos
+        busqueda.addEventListener('input', () => {
+            paginaActual = 1;
+            productosFiltrados = aplicarFiltro(busqueda.value);
+            mostrarPagina(paginaActual);
+        });
+
+        btnVerMas.addEventListener('click', () => {
+            paginaActual++;
+            mostrarPagina(paginaActual);
+        });
+
+        btnVerAnterior.addEventListener('click', () => {
+            if (paginaActual > 1) {
+                paginaActual--;
+                mostrarPagina(paginaActual);
+            }
+        });
+
+        cargarProductos();
+    });
+</script>

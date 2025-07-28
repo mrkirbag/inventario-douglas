@@ -1,0 +1,71 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout>
+    <h1>Agregar Usuario</h1>
+
+    <div class="btn-add_container">
+        <a class="btn-add" href="/usuarios">Regresar</a>
+    </div>
+
+    <form action="/agregarUsuarios" id="formulario">
+        <input type="text" name="nombre" id="nombre" placeholder="Nombre y Apellido" />
+        <input type="text" name="usuario" id="usuario" placeholder="Usuario" />
+        <input type="password" name="contrasena" id="contrasena" placeholder="Contraseña" />
+        <input type="password" name="contrasena2" id="contrasena2" placeholder="Repetir contraseña" />
+        <button type="submit">Agregar</button>
+    </form>
+
+    <div id="mensaje"></div>
+</Layout>
+
+<script type="module">
+
+    import { mostrarError, mostrarMensaje } from '../../src/utils/mensajes.js';
+
+    const formulario = document.getElementById('formulario');
+
+    formulario.addEventListener('submit', async (event) => { 
+        
+        event.preventDefault();
+        
+        const nombre = document.getElementById('nombre').value;
+        const usuario = document.getElementById('usuario').value;
+        const contrasena = document.getElementById('contrasena').value;
+        const contrasena2 = document.getElementById('contrasena2').value;
+
+        // Validar que las contrasenas coincidan
+        if(contrasena !== contrasena2){
+            mostrarError('Las contraseñas no coinciden');
+            return;
+        }
+
+        // Validar campos vacios
+        if (nombre === '' || usuario === '' || contrasena === '' || contrasena2 === '' ) {
+            mostrarError('Todos los campos son obligatorios.'); 
+            return;
+        }
+
+        try{
+            const response = await fetch("/api/usuarios", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ nombre, usuario, contrasena })
+            });
+
+            if(!response.ok){
+                throw new Error('Error al agregar usuario: ' + response.status);
+            } else {
+                mostrarMensaje('Usuario agregado exitosamente.');
+                setTimeout(() => {
+                    window.location.href = '/usuarios';
+                }, 1000);
+            }
+
+        } catch(error){
+            console.error(error);
+        }
+    });

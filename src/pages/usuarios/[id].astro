@@ -1,0 +1,96 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const {id} = Astro.params;
+---
+
+<Layout>
+    <h1>Editar Usuario</h1>
+
+    <div class="btn-add_container">
+        <a class="btn-add" href="/usuarios">Regresar</a>
+    </div>
+
+    <form action="/editarUsuarios" id="formulario">
+        <input type="text" name="nombre" id="nombre" placeholder="Nombre y Apellido" />
+        <input type="text" name="usuario" id="usuario" placeholder="Usuario" />
+        <input type="text" name="contrasena" id="contrasena" placeholder="Contraseña" />
+        <input type="text" name="contrasena2" id="contrasena2" placeholder="Repetir contraseña" />
+        <button type="submit">Agregar</button>
+    </form>
+
+    <div id="mensaje"></div>
+</Layout>
+
+<script type="module" is:inline>
+
+    import { mostrarError, mostrarMensaje } from '../../src/utils/mensajes.js';
+
+    // Rellenar campos con los datos existentes
+    const id = location.pathname.split("/").pop();
+    const nombre = document.querySelector("#nombre");
+    const usuario = document.querySelector("#usuario");
+    const contrasena = document.querySelector("#contrasena");
+
+    document.addEventListener('DOMContentLoaded', rellenarCampos);
+
+    async function rellenarCampos(){
+
+        const response = await fetch(`/api/usuarios/${id}`);
+        const data = await response.json();
+
+        nombre.value = data.nombre;
+        usuario.value = data.usuario;
+        contrasena.value = data.contrasena;
+    }
+
+    // Logica de editar usuario
+    const formulario = document.getElementById('formulario');
+
+    formulario.addEventListener('submit', async (event) => { 
+        
+        event.preventDefault();
+        
+        const id = location.pathname.split("/").pop();
+        const nombre = document.querySelector("#nombre").value;
+        const usuario = document.querySelector("#usuario").value;
+        const contrasena = document.querySelector("#contrasena").value;
+        const contrasena2 = document.querySelector("#contrasena2").value;
+
+        // Validar que las contrasenas coincidan
+        if(contrasena !== contrasena2){
+            mostrarError('Las contraseñas no coinciden');
+            return;
+        }
+
+        // Validar campos vacios
+        if (nombre === '' || usuario === '' || contrasena === '' || contrasena2 === '' ) {
+            mostrarError('Todos los campos son obligatorios.');
+            return;
+        }
+
+        try {
+            // Enviar datos al servidor
+            const response = await fetch("/api/usuarios", {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id, nombre, usuario, contrasena }),
+            });
+
+            // Verificar si la respuesta es exitosa
+            if (!response.ok) {
+                throw new Error('Error al actualizar usuario: ' + response.status);
+            } else {
+
+                mostrarMensaje('Usuario actualizado exitosamente.');
+                setTimeout(() => {
+                    window.location.href = '/usuarios';
+                }, 2000);;
+            }
+        } catch(error){
+            console.error(error);
+        }
+    });
+</script>
