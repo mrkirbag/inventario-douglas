@@ -1,4 +1,4 @@
-import { db } from '../../../lib/db';
+import { db } from '../db';
 
 export async function PUT({ request }) {
     try {
