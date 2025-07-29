@@ -37,6 +37,7 @@ import Navbar from "../components/Navbar.astro"
 
 	.navbar {
 		position: fixed;
+		z-index: ;
 	}
 
 	.content {
@@ -49,13 +50,6 @@ import Navbar from "../components/Navbar.astro"
 		display: flex;
 		flex-direction: column;
 		gap: 20px;
-	}
-
-	@media (max-width: 768px) {
-		.content {
-			margin-left: 0;
-			padding: 1rem 1rem;
-		}
 	}
 
 	h1 {
@@ -267,5 +261,55 @@ import Navbar from "../components/Navbar.astro"
 		font-size: 1.2rem;
 		padding: .5rem 1rem;
 	}
+
+	@media (max-width: 768px) {
+
+		h1 {
+			text-align: left;
+			font-size: 1.5rem;
+		}
+		table, thead, tbody, th, td, tr {
+			display: block;
+			width: 100%;
+		}
+
+		thead {
+			display: none;
+		}
+
+		tr {
+			margin-bottom: 1rem;
+			border: 1px solid #ccc;
+			border-radius: 6px;
+			padding: .75rem;
+			background-color: #f9f9f9;
+		}
+
+		td {
+			text-align: left;
+			padding: .5rem;
+			position: relative;
+			font-size: .85rem;
+		}
+
+		td::before {
+			content: attr(data-label);
+			font-weight: bold;
+			display: block;
+			margin-bottom: .3rem;
+			color: #555;
+		}
+	}
+
+	@media (max-width: 768px) {
+	.content {
+		margin-left: 0;
+		padding: 1rem 1rem;
+	}
+
+	.navbar {
+		z-index: 1000;
+	}
+}
 
 </style>
