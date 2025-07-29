@@ -138,11 +138,12 @@ export async function PUT({ request }) {
         }
 
         // Validacion para que no se ingrese otro codigo igual
-        const existe = await db.execute('SELECT 1 FROM productos WHERE codigo = ?', [codigo]);
+        const existe = await db.execute('SELECT 1 FROM productos WHERE codigo = ? AND id != ?', [codigo, id]);
 
         if (existe.rows.length > 0) {
             return new Response('Ya existe un producto con ese código', { status: 409 });
         }
+
 
         // Parseo
         const costoFinal = parseFloat(costo);
