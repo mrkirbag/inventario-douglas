@@ -16,6 +16,7 @@ const {id} = Astro.params;
         <input type="text" name="nombre" id="nombre" placeholder="Nombre" />
         <input type="number" name="stock" id="stock" placeholder="Cantidad de Stock Inicial" min="0"/>
         <input type="text" name="costo" id="costo" placeholder="Precio de Costo en USD" min="0"/>
+        <input type="number" name="porcentaje" id="porcentaje" placeholder="Porcentaje de ganancia" min="0">
         <button type="submit">Actualizar</button>
     </form>
 
@@ -32,6 +33,7 @@ const {id} = Astro.params;
     const codigo = document.querySelector("#codigo");
     const stock = document.querySelector("#stock");
     const costo = document.querySelector("#costo");
+    const porcentaje = document.querySelector("#porcentaje");
     
     document.addEventListener('DOMContentLoaded', rellenarCampos);
 
@@ -44,6 +46,7 @@ const {id} = Astro.params;
         nombre.value = producto.nombre;
         stock.value = producto.stock;
         costo.value = producto.costo;
+        porcentaje.value = producto.porcentaje;
     }
 
     const formulario = document.getElementById('formulario');
@@ -57,9 +60,10 @@ const {id} = Astro.params;
         const nombre = document.getElementById('nombre').value;
         const stockString = document.getElementById('stock').value;
         const costoString = document.getElementById('costo').value;
+        const porcentajeString = document.getElementById('porcentaje').value;
 
         // Validar campos vacios
-        if (codigo === '' || nombre === '' || stockString === '' || costoString === '') {
+        if (codigo === '' || nombre === '' || stockString === '' || costoString === '' || porcentajeString === '') {
             mostrarError('Todos los campos son obligatorios.');
             return;
         }
@@ -78,9 +82,17 @@ const {id} = Astro.params;
             return;
         }
 
+        // Validar Porcentaje
+        const porcentajeValido = /^\d+$/.test(porcentajeString);
+        if (!porcentajeValido || parseInt(porcentajeString) <= 0) {
+            mostrarError('El porcentaje de ganancia debe ser un número positivo mayor a 0.');
+            return;
+        }
+
         // Parseo
         const stock = parseInt(stockString);
         const costo = costoNum;
+        const porcentaje = parseInt(porcentajeString)
 
         // Enviar datos al servidor
         const response = await fetch("/api/productos", {
@@ -88,7 +100,7 @@ const {id} = Astro.params;
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ id, codigo, nombre, stock, costo }),
+            body: JSON.stringify({ id, codigo, nombre, stock, costo, porcentaje }),
         });
 
         // Verificar si la respuesta es exitosa

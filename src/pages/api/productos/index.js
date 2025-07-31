@@ -54,9 +54,7 @@ export async function POST({ request }) {
     try {
 
         const body = await request.json();
-        const { codigo, nombre, stock, costo } = body;
-
-        console.log(codigo, nombre, stock, costo)
+        const { codigo, nombre, stock, porcentaje, costo } = body;
 
         // Validaciones
         const esEnteroPositivo = /^\d+$/;
@@ -64,8 +62,9 @@ export async function POST({ request }) {
 
         const stockValido = esEnteroPositivo.test(stock) && parseInt(stock) >= 0;
         const costoValido = esDecimalPositivo.test(costo) && parseFloat(costo) >= 0;
+        const porcentajeValido = esEnteroPositivo.test(porcentaje) && parseInt(porcentaje) >= 0;
 
-        if (!codigo || !nombre || !stockValido || !costoValido) {
+        if (!codigo || !nombre || !stockValido || !costoValido || !porcentajeValido) {
             return new Response('Faltan datos válidos del producto', { status: 400 });
         }
 
@@ -79,14 +78,12 @@ export async function POST({ request }) {
         // Parseo
         const costoFinal = parseFloat(costo);
         const stockFinal = parseInt(stock);
+        const porcentajeFinal = parseInt(porcentaje);
 
-        // Generar valor del precio de venta segun el porcentaje
-        const PORCENTAJE_GANANCIA = 15;
-
-        const venta = costoFinal + ((PORCENTAJE_GANANCIA * costoFinal) / 100);
+        const venta = costoFinal + ((porcentajeFinal * costoFinal) / 100);
 
         // Insertar el nuevo cliente en la base de datos
-        const result = await db.execute('INSERT INTO productos (codigo, nombre, stock, costo, precio_venta) VALUES (?, ?, ?, ?, ?)',[codigo, nombre, stockFinal, costoFinal, venta]);
+        const result = await db.execute('INSERT INTO productos (codigo, nombre, stock, costo, precio_venta, porcentaje) VALUES (?, ?, ?, ?, ?, ?)',[codigo, nombre, stockFinal, costoFinal, venta, porcentaje]);
 
         return new Response(JSON.stringify({ message: "Producto agregado exitosamente" }), { status: 201 });
 
@@ -124,7 +121,7 @@ export async function DELETE({ request }) {
 export async function PUT({ request }) {
     try {
         const body = await request.json();
-        const { id, codigo, nombre, stock, costo } = body;
+        const { id, codigo, nombre, stock, costo, porcentaje } = body;
 
         // Validaciones
         const esEnteroPositivo = /^\d+$/;
@@ -132,8 +129,9 @@ export async function PUT({ request }) {
 
         const stockValido = esEnteroPositivo.test(stock) && parseInt(stock) >= 0;
         const costoValido = esDecimalPositivo.test(costo) && parseFloat(costo) >= 0;
+        const porcentajeValido = esEnteroPositivo.test(porcentaje) && parseInt(porcentaje) >= 0;
 
-        if (!codigo || !nombre || !stockValido || !costoValido) {
+        if (!codigo || !nombre || !stockValido || !costoValido || !porcentajeValido){
             return new Response('Faltan datos válidos del producto', { status: 400 });
         }
 
@@ -148,15 +146,13 @@ export async function PUT({ request }) {
         // Parseo
         const costoFinal = parseFloat(costo);
         const stockFinal = parseInt(stock);
+        const porcentajeFinal = parseInt(porcentaje);
 
-        // Generar valor del precio de venta segun el porcentaje
-        const PORCENTAJE_GANANCIA = 15;
-
-        const venta = costoFinal + ((PORCENTAJE_GANANCIA * costoFinal) / 100);
+        const venta = costoFinal + ((porcentajeFinal * costoFinal) / 100);
 
 
         // Actualizar el cliente en la base de datos
-        const result = await db.execute('UPDATE productos SET codigo = ?, nombre = ?, stock = ?, costo = ?, precio_venta = ? WHERE id = ?', [codigo, nombre, stockFinal, costoFinal, venta, id]);
+        const result = await db.execute('UPDATE productos SET codigo = ?, nombre = ?, stock = ?, costo = ?, precio_venta = ?, porcentaje = ? WHERE id = ?', [codigo, nombre, stockFinal, costoFinal, venta, porcentajeFinal, id]);
 
         // Validar si no se encuentra
         if (result.affectedRows === 0) {

@@ -16,10 +16,11 @@ import Layout from '../layouts/Layout.astro';
     <table>
         <thead>
             <tr>
-                <th>Codigo</th>
+                <th>Código</th>
                 <th>Nombre</th>
-                <th>Cantidad</th>
-                <th>Precio Costo</th>
+                <th>Cant.</th>
+                <th>Costo</th>
+                <th>%</th>
                 <th>Precio Venta</th>
                 <th>Acciones</th>
             </tr>
@@ -38,7 +39,7 @@ import Layout from '../layouts/Layout.astro';
 
 <script type="module" is:inline>
 
-    import { noRegistros, mostrarMensaje } from "/mensajes.js";
+    import { noRegistros } from "/mensajes.js";
 
     document.addEventListener('DOMContentLoaded', () => {
 
@@ -82,6 +83,7 @@ import Layout from '../layouts/Layout.astro';
                                     <td>${producto.nombre.toUpperCase()}</td>
                                     <td>${producto.stock} u.</td>
                                     <td>${producto.costo.toFixed(2)} USD</td>
+                                    <td>${producto.porcentaje}%</td>
                                     <td>${producto.precio_venta.toFixed(2)} USD</td>
                                 `;
 

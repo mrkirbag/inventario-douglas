@@ -102,9 +102,7 @@ import Navbar from "../components/Navbar.astro"
 
 	table {
 		width: 100%;
-		border-collapse: collapse;
 		margin-bottom: .5rem;
-		table-layout: fixed;
 
 		& th {
 			background-color: #f2f2f2;
@@ -115,6 +113,7 @@ import Navbar from "../components/Navbar.astro"
 
 		tr {
 			border-bottom: 1px solid #ddd;
+			width: 100%;
 
 			&:last-child {
 				border-bottom: none;
@@ -127,7 +126,7 @@ import Navbar from "../components/Navbar.astro"
 		td {
 			padding: .75rem;
 			text-align: left;
-			font-size: .9rem;
+			font-size: .85rem;
 		}
 
 		.acciones {
@@ -135,6 +134,7 @@ import Navbar from "../components/Navbar.astro"
 			gap: 10px;
 
 			& button {
+				font-size: .7rem;
 				color: #fff;
 				font-weight: 700;
 				border: none;
