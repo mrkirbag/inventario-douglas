@@ -11,14 +11,32 @@ const {id} = Astro.params;
         <a class="btn-add" href="/productos">Regresar</a>
     </div>
 
-    <form id="formulario">
-        <input type="text" name="codigo" id="codigo" placeholder="Código del Producto" />
-        <input type="text" name="nombre" id="nombre" placeholder="Nombre" />
-        <input type="number" name="stock" id="stock" placeholder="Cantidad de Stock Inicial" min="0"/>
-        <input type="text" name="costo" id="costo" placeholder="Precio de Costo en USD" min="0"/>
-        <input type="number" name="porcentaje" id="porcentaje" placeholder="Porcentaje de ganancia" min="0">
-        <button type="submit">Actualizar</button>
-    </form>
+    <section class="form-container">
+        <form id="formulario">
+            <div>
+                <label for="codigo">Código</label>
+                <input type="text" name="codigo" id="codigo" placeholder="Código del Producto" />
+            </div>
+            <div>
+                <label for="nombre">Nombre</label>
+                <input type="text" name="nombre" id="nombre" placeholder="Nombre" />
+            </div>
+            <div>
+                <label for="stock">Stock actual</label>
+                <input type="number" name="stock" id="stock" placeholder="Cantidad de Stock Inicial" min="0"/>
+            </div>
+            <div>
+                <label for="costo">Precio de costo</label>
+                <input type="text" name="costo" id="costo" placeholder="Precio de Costo en USD" min="0"/>
+            </div>
+            <div>
+                <label for="venta">Precio de venta</label>
+                <input type="text" name="venta" id="venta" placeholder="Precio de Venta en USD" min="0"/>
+            </div>
+
+            <button type="submit">Actualizar</button>
+        </form>
+    </section>
 
     <div id="mensaje"></div>
 </Layout>
@@ -33,7 +51,7 @@ const {id} = Astro.params;
     const codigo = document.querySelector("#codigo");
     const stock = document.querySelector("#stock");
     const costo = document.querySelector("#costo");
-    const porcentaje = document.querySelector("#porcentaje");
+    const venta = document.querySelector("#venta");
     
     document.addEventListener('DOMContentLoaded', rellenarCampos);
 
@@ -46,7 +64,7 @@ const {id} = Astro.params;
         nombre.value = producto.nombre;
         stock.value = producto.stock;
         costo.value = producto.costo;
-        porcentaje.value = producto.porcentaje;
+        venta.value = producto.venta;
     }
 
     const formulario = document.getElementById('formulario');
@@ -60,10 +78,11 @@ const {id} = Astro.params;
         const nombre = document.getElementById('nombre').value;
         const stockString = document.getElementById('stock').value;
         const costoString = document.getElementById('costo').value;
-        const porcentajeString = document.getElementById('porcentaje').value;
+        const ventaString = document.getElementById('venta').value;
+
 
         // Validar campos vacios
-        if (codigo === '' || nombre === '' || stockString === '' || costoString === '' || porcentajeString === '') {
+        if (codigo === '' || nombre === '' || stockString === '' || costoString === '' || ventaString === '') {
             mostrarError('Todos los campos son obligatorios.');
             return;
         }
@@ -82,17 +101,17 @@ const {id} = Astro.params;
             return;
         }
 
-        // Validar Porcentaje
-        const porcentajeValido = /^\d+$/.test(porcentajeString);
-        if (!porcentajeValido || parseInt(porcentajeString) <= 0) {
-            mostrarError('El porcentaje de ganancia debe ser un número positivo mayor a 0.');
+        // Validar precio venta
+        const ventaNum = parseFloat(ventaString.replace(',', '.'));
+        if (isNaN(ventaNum) || ventaNum <= 0) {
+            mostrarError('El precio de venta debe ser un número positivo mayor a 0.');
             return;
         }
 
         // Parseo
         const stock = parseInt(stockString);
         const costo = costoNum;
-        const porcentaje = parseInt(porcentajeString)
+        const venta = ventaNum;
 
         // Enviar datos al servidor
         const response = await fetch("/api/productos", {
@@ -100,7 +119,7 @@ const {id} = Astro.params;
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ id, codigo, nombre, stock, costo, porcentaje }),
+            body: JSON.stringify({ id, codigo, nombre, stock, costo, venta }),
         });
 
         // Verificar si la respuesta es exitosa

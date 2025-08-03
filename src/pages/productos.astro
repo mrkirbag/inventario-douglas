@@ -19,9 +19,8 @@ import Layout from '../layouts/Layout.astro';
                 <th>Código</th>
                 <th>Nombre</th>
                 <th>Cant.</th>
-                <th>Costo</th>
-                <th>%</th>
-                <th>Precio Venta</th>
+                <th>P. Costo</th>
+                <th>P. Venta</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -83,8 +82,7 @@ import Layout from '../layouts/Layout.astro';
                                     <td>${producto.nombre.toUpperCase()}</td>
                                     <td>${producto.stock} u.</td>
                                     <td>${producto.costo.toFixed(2)} USD</td>
-                                    <td>${producto.porcentaje}%</td>
-                                    <td>${producto.precio_venta.toFixed(2)} USD</td>
+                                    <td>${producto.venta.toFixed(2)} USD</td>
                                 `;
 
                 // Botones de acciones

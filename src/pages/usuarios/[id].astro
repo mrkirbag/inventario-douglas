@@ -11,16 +11,36 @@ const {id} = Astro.params;
         <a class="btn-add" href="/usuarios">Regresar</a>
     </div>
 
-    <form id="formulario">
-        <input type="text" name="nombre" id="nombre" placeholder="Nombre y Apellido" />
-        <input type="text" name="usuario" id="usuario" placeholder="Usuario" />
-        <input type="text" name="contrasena" id="contrasena" placeholder="Contraseña" />
-        <input type="text" name="contrasena2" id="contrasena2" placeholder="Repetir contraseña" />
-        <button type="submit">Actualizar</button>
-    </form>
+    <section class="form-container">
+        <form id="formulario">
+            <div>
+                <label for="nombre">Nombre</label>
+                <input type="text" name="nombre" id="nombre" placeholder="Nombre y Apellido" />
+            </div>
+            <div>
+                <label for="usuario">Usuario</label>
+                <input type="text" name="usuario" id="usuario" placeholder="Usuario" />
+            </div>
+            <div class="password-container">
+                <input type="password" name="contrasena" id="contrasena" placeholder="Contraseña" />
+                <span id="verContrasena">👁️</span>
+            </div>
+            <div class="password-container">
+                <input type="password" name="contrasena2" id="contrasena2" placeholder="Repetir contraseña" />
+                <span id="verContrasena2">👁️</span>
+            </div>
+            <button type="submit">Actualizar</button>
+        </form>
+    </section>
 
     <div id="mensaje"></div>
 </Layout>
+
+<style>
+
+
+
+</style>
 
 <script type="module" is:inline>
 
@@ -31,6 +51,18 @@ const {id} = Astro.params;
     const nombre = document.querySelector("#nombre");
     const usuario = document.querySelector("#usuario");
     const contrasena = document.querySelector("#contrasena");
+
+    const btnVerContrasena = document.querySelector("#verContrasena");
+    const btnVerContrasena2 = document.querySelector("#verContrasena2");
+
+    btnVerContrasena.addEventListener('click', () => {
+        contrasena.type = contrasena.type === 'password' ? 'text' : 'password';
+    });
+
+    btnVerContrasena2.addEventListener('click', () => {
+        const contrasena2 = document.querySelector("#contrasena2");
+        contrasena2.type = contrasena2.type === 'password' ? 'text' : 'password';
+    });
 
     document.addEventListener('DOMContentLoaded', rellenarCampos);
 

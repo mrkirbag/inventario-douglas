@@ -9,14 +9,28 @@ import Layout from '../../layouts/Layout.astro';
         <a class="btn-add" href="/productos">Regresar</a>
     </div>
 
-    <form id="formulario">
-        <input type="text" name="codigo" id="codigo" placeholder="Código del Producto" />
-        <input type="text" name="nombre" id="nombre" placeholder="Nombre" />
-        <input type="number" name="stock" id="stock" placeholder="Cantidad de Stock Inicial" min="0"/>
-        <input type="text" name="costo" id="costo" placeholder="Precio de Costo en USD" min="0"/>
-        <input type="number" name="porcentaje" id="porcentaje" placeholder="Porcentaje de ganancia" min="0">
-        <button type="submit">Agregar</button>
-    </form>
+    <section class="form-container">
+        <form id="formulario">
+            <div>
+                <input type="text" name="codigo" id="codigo" placeholder="Código del Producto" />
+            </div>
+            <div>
+                <input type="text" name="nombre" id="nombre" placeholder="Nombre" />
+            </div>
+            <div>
+                <input type="number" name="stock" id="stock" placeholder="Cantidad de Stock Inicial" min="0"/>
+            </div>
+            <div>
+                <input type="text" name="costo" id="costo" placeholder="Precio de Costo en USD" min="0"/>
+            </div>
+            <div>
+                <input type="text" name="venta" id="venta" placeholder="Precio de Venta en USD" min="0"/>
+            </div>
+
+            <button type="submit">Agregar</button>
+        </form>
+    </section>
+
 
     <div id="mensaje"></div>
 </Layout>
@@ -34,11 +48,11 @@ import Layout from '../../layouts/Layout.astro';
         const codigo = document.getElementById('codigo').value;
         const nombre = document.getElementById('nombre').value;
         const stockString = document.getElementById('stock').value;
-        const porcentajeString = document.getElementById('porcentaje').value;
         const costoString = document.getElementById('costo').value;
+        const ventaString = document.getElementById('venta').value;
 
         // Validar campos vacios
-        if (codigo === '' || nombre === '' || stockString === '' || porcentajeString === '' || costoString === '') {
+        if (codigo === '' || nombre === '' || stockString === '' || costoString === '' || ventaString === '') {
             mostrarError('Todos los campos son obligatorios.');
             return;
         }
@@ -50,13 +64,6 @@ import Layout from '../../layouts/Layout.astro';
             return;
         }
 
-        // Validar Porcentaje
-        const porcentajeValido = /^\d+$/.test(porcentajeString);
-        if (!porcentajeValido || parseInt(porcentajeString) <= 0) {
-            mostrarError('El porcentaje de ganancia debe ser un número positivo mayor a 0.');
-            return;
-        }
-
         // Validar costo
         const costoNum = parseFloat(costoString.replace(',', '.'));
         if (isNaN(costoNum) || costoNum <= 0) {
@@ -64,10 +71,17 @@ import Layout from '../../layouts/Layout.astro';
             return;
         }
 
+        // Validar venta
+        const ventaNum = parseFloat(ventaString.replace(',', '.'));
+        if (isNaN(ventaNum) || ventaNum <= 0) {
+            mostrarError('El precio de venta debe ser un número positivo mayor a 0.');
+            return;
+        }
+
         // Parseo
         const stock = parseInt(stockString);
-        const porcentaje = parseInt(porcentajeString);
         const costo = costoNum;
+        const venta = ventaNum;
 
         // Enviar datos al servidor
         const response = await fetch("/api/productos", {
@@ -75,7 +89,7 @@ import Layout from '../../layouts/Layout.astro';
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ codigo, nombre, stock, porcentaje, costo })
+            body: JSON.stringify({ codigo, nombre, stock, costo, venta })
         });
 
         // Verificar si la respuesta es exitosa

@@ -7,8 +7,6 @@ const {id} = Astro.params;
 <Layout>
     <h1>Agregar Stock</h1>
 
-
-
     <div class="btn-add_container">
         <a class="btn-add" href="/productos">Regresar</a>
     </div>
@@ -54,7 +52,7 @@ const {id} = Astro.params;
         nombre.textContent = producto.nombre;
         stock.textContent = producto.stock;
         costo.textContent = producto.costo;
-        pVenta.textContent = producto.precio_venta;
+        pVenta.textContent = producto.venta;
     }
 
     const formulario = document.getElementById('formulario');
