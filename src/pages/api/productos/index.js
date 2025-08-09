@@ -14,7 +14,7 @@ export async function GET({ request }) {
                                 sql: `
                                     SELECT * FROM productos 
                                     WHERE nombre LIKE ? OR codigo LIKE ? 
-                                    ORDER BY nombre 
+                                    ORDER BY LOWER(REPLACE(nombre, ' ', '')) ASC
                                     LIMIT ? OFFSET ?
                                 `,
                                 args: [`%${search}%`, `%${search}%`, limit, offset],
@@ -22,7 +22,7 @@ export async function GET({ request }) {
                             : {
                                 sql: `
                                     SELECT * FROM productos 
-                                    ORDER BY nombre 
+                                    ORDER BY LOWER(REPLACE(nombre, ' ', '')) ASC
                                     LIMIT ? OFFSET ?
                                 `,
                                 args: [limit, offset],

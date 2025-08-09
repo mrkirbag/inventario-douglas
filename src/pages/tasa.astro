@@ -1,0 +1,94 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout>
+    <h1>Tasa del Día en Pesos</h1>
+
+    <p>Tasa del día: <span id="tasaTextoContainer"></span> COP</p>
+
+    <section class="form-container">
+        <form id="formulario">
+            <div>
+                <label for="tasa">Cambio en COP</label>
+                <input type="text" id="tasa" name="tasa" required />
+            </div>
+            <button type="submit">Actualizar Tasa</button>
+        </form>
+    </section>
+        
+    <div id="mensaje"></div>
+</Layout>
+
+<script type="module" is:inline>
+
+    import { mostrarError, mostrarMensaje } from '/mensajes.js';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const tasaTextoContainer = document.getElementById('tasaTextoContainer');
+        const inputTasa = document.getElementById('tasa');
+
+        try {
+            const response = await fetch('/api/tasa');
+            const data = await response.json();
+
+            // Verificar si no hay registros
+            if(data.message){
+                mostrarMensaje(data.message);
+                tasaTextoContainer.textContent = '';
+                return;
+            }
+
+            // Verificar si la respuesta es exitosa
+            if (!response.ok) mostrarError(data.error || 'Error al cargar la tasa del día');
+
+            tasaTextoContainer.textContent = data.valor;
+            inputTasa.value = data.valor;
+
+        } catch (error) {
+            mostrarError(error.message);
+        }
+
+        
+    });
+    
+    const formulario = document.getElementById('formulario');
+
+    formulario.addEventListener('submit', async (event) => { 
+        
+        event.preventDefault();
+
+        const tasa = parseInt(document.getElementById('tasa').value);
+
+        try {
+            const response = await fetch('/api/tasa', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ tasa })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) mostrarError(data.error || 'Error al actualizar la tasa');
+
+            mostrarMensaje('Tasa actualizada correctamente');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+
+        } catch (error) {
+            mostrarError(error.message);
+        }
+    });
+</script>
+
+<style>
+
+    #tasaTextoContainer {
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+</style>

@@ -1,0 +1,71 @@
+import { db } from '../db';
+
+export async function GET({ request }) {
+    try {
+
+        const url = new URL(request.url);
+        const fecha = url.searchParams.get('fecha');
+
+        const result = await db.execute(` SELECT
+                                            v.id,
+                                            v.fecha,
+                                            c.nombre AS cliente,
+                                            c.cedula AS cedula_cliente,
+                                            v.total_usd,
+                                            v.estado
+                                            FROM ventas v
+                                            JOIN clientes c ON v.cliente_id = c.id
+                                            WHERE v.fecha = ?
+                                            AND v.estado != 'cancelado'
+                                            ORDER BY c.nombre ASC;
+                                        `, [fecha]);
+
+        // Si no hay resultados, retornar un mensaje de error
+        if (!result || !result.rows || result.rows.length === 0) {
+            return new Response(JSON.stringify({ message: 'No hay ventas registradas para esa fecha' }), {
+                headers: { 'Content-Type': 'application/json' },
+                status: 200
+            });
+        }
+        
+        // Retornar los clientes en formato JSON
+        return new Response(JSON.stringify(result.rows), {
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        return new Response('Error fetching products', { status: 500 });
+    }
+}
+
+export async function POST({ request }) {
+    try {
+
+        const body = await request.json();
+        const { fecha, clienteId, estado, tipoPago } = body;
+
+        
+
+        if (!fecha || !clienteId || !estado || !tipoPago) {
+            return new Response('Faltan datos válidos del producto', { status: 400 });
+        }
+
+        // Insertar el nuevo cliente en la base de datos
+        const result = await db.execute(`INSERT INTO ventas (fecha, cliente_id, total_usd, estado, tipo_pago) VALUES (?, ?, ?, ?, ?)`,
+        [fecha, clienteId, 0, estado, tipoPago]
+        );
+
+
+        // Obtener el ID generado
+        const ventaId = result.lastInsertRowid;
+        const ventaIdSafe = typeof ventaId === 'bigint' ? ventaId.toString() : ventaId;
+
+        return new Response(JSON.stringify({ message: "Venta registrada exitosamente", ventaId: ventaIdSafe }),
+        { status: 201 });
+
+    } catch (error) {
+        console.error('Error inserting product:', error);
+        return new Response('Error inserting product', { status: 500 });
+    }
+}

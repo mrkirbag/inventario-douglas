@@ -40,7 +40,7 @@ import Layout from '../layouts/Layout.astro';
 
     import { noRegistros } from "/mensajes.js";
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
 
         // Elementos del DOM
         const tbody = document.getElementById('listaProductos');
@@ -56,8 +56,11 @@ import Layout from '../layouts/Layout.astro';
         let paginaActual = 1;
         const porPagina = 10;
 
+        // Obtener tasa de cambio
+        const tasa = await cambioCOP();
+
         // Mostrar lote de clientes
-        function mostrarPagina(pagina) {
+        async function mostrarPagina(pagina) {
 
             const inicio = (pagina - 1) * porPagina;
             const fin = inicio + porPagina;
@@ -77,12 +80,23 @@ import Layout from '../layouts/Layout.astro';
 
             lote.forEach(producto => {
                 const tr = document.createElement('tr');
+                const costoPesos =  Math.ceil(tasa * producto.costo);
+                const ventaPesos =  Math.ceil(tasa * producto.venta);
+
                 tr.innerHTML = `    
                                     <td>${producto.codigo}</td>
                                     <td>${producto.nombre.toUpperCase()}</td>
                                     <td>${producto.stock} u.</td>
-                                    <td>${producto.costo.toFixed(2)} USD</td>
-                                    <td>${producto.venta.toFixed(2)} USD</td>
+                                    <td>
+                                        ${producto.costo.toFixed(2)} USD
+                                        <br />
+                                        <span style="font-size: .75rem;">${Math.ceil(costoPesos)} COP
+                                    </td>
+                                    <td>
+                                        ${producto.venta.toFixed(2)} USD
+                                        <br />
+                                        <span style="font-size: .75rem;">${Math.ceil(ventaPesos)} COP
+                                    </td>
                                 `;
 
                 // Botones de acciones
@@ -158,7 +172,6 @@ import Layout from '../layouts/Layout.astro';
             );
         }
 
-
         // Cargar desde el backend una sola vez
         async function cargarProductos() {
             try {
@@ -199,6 +212,21 @@ import Layout from '../layouts/Layout.astro';
                 mostrarPagina(paginaActual);
             }
         });
+
+        async function cambioCOP(){
+            try {
+                const response = await fetch('/api/tasa');
+                if (!response.ok) throw new Error('Error al obtener la tasa de cambio');
+                
+                const data = await response.json();
+                const tasa = Number(data.valor);
+
+                return tasa;
+            } catch (error) {
+                console.error('Error fetching tasa:', error);
+                throw error;
+            }
+        }
 
         cargarProductos();
     });

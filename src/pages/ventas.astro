@@ -1,0 +1,142 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout>
+    <h1>Ventas</h1>
+
+    <div class="btn-add_container">
+        <a class="btn-add" href="/ventas/agregarVentas">Agregar Venta</a>
+    </div>
+
+
+    <p>Selecciona una fecha para ver las ventas de ese día.</p>
+    <div class="input-busqueda_container">
+        <input type="date" id="inputBusqueda"/>
+    </div>
+
+    <table>
+        <thead id="tablaVentasHead" style="opacity: 0;">
+            <tr>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="listaVentas">
+        </tbody>
+    </table>
+
+    <div id="mensaje"></div>
+</Layout>
+
+<style>
+
+    p {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        text-align: center;
+        font-weight: 700;
+    }
+
+</style>
+
+<script type="module" is:inline>
+
+    import { noRegistros } from "/mensajes.js";
+
+    const inputBusqueda = document.getElementById("inputBusqueda");
+
+    inputBusqueda.addEventListener('input', async () => {
+
+        // Elementos del DOM
+        const tablaVentasHead = document.getElementById('tablaVentasHead');
+        const tbody = document.getElementById('listaVentas');
+        tbody.innerHTML = ""; // Limpiar el tbody antes de cargar nuevos datos
+
+        try {
+            const res = await fetch(`/api/ventas?fecha=${inputBusqueda.value}`);
+            const ventas = await res.json();
+
+            // Validar que no haya ventas
+            if (ventas.message) {
+                tbody.innerHTML = "";
+                noRegistros(ventas.message)
+                return;
+            }
+
+            tablaVentasHead.style.opacity = 1;
+
+            // Obtener tasa de cambio
+            const tasaFetch = await fetch('/api/tasa');
+            const dataTasa = await tasaFetch.json();
+            const tasa = Number(dataTasa.valor);
+
+            ventas.forEach(ventas => {
+
+                // Formatear fecha
+                const fechaObjeto = new Date(ventas.fecha + "T00:00:00");
+                const opcionesFormato = { day: "2-digit", month: "2-digit", year: "numeric" };
+                const fechaFormateada = fechaObjeto.toLocaleDateString("es-ES", opcionesFormato);
+
+
+                const totalCOP = Math.ceil(ventas.total_usd * tasa);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `    
+                                    <td>${fechaFormateada}</td>
+                                    <td>
+                                        ${ventas.cliente.toUpperCase()}<br />
+                                        C.I. ${ventas.cedula_cliente}
+                                    </td>
+                                    <td>
+                                        ${ventas.total_usd} USD<br />
+                                        ${totalCOP} COP
+                                    </td>
+                                    <td>${ventas.estado}</td>
+                                `;
+
+                // Botones de acciones
+                const tdAcciones = document.createElement('td');
+                tdAcciones.classList.add('acciones');
+
+                // Boton de eliminar
+                const btnEliminar = document.createElement('button');
+                btnEliminar.classList.add('btn-eliminar');
+                btnEliminar.textContent = 'ANULAR';
+                btnEliminar.disabled = true;
+
+                btnEliminar.onclick = async () => {
+
+                    // Confirmación antes de eliminar
+                    const confirmar = confirm(`¿Estás seguro de eliminar al usuario ${usuario.nombre}?`);
+                    if (!confirmar) return;
+
+                    // Enviar solicitud de eliminación al servidor
+                    try {
+                        const res = await fetch('/api/usuarios/', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: usuario.id })
+                        });
+
+                        window.location.reload();
+                    } catch(error) {
+                        console.error("Error eliminando usuario:", error);
+                    }    
+                }
+                tdAcciones.appendChild(btnEliminar);
+
+                // Adjuntar acciones al tr
+                tr.appendChild(tdAcciones);
+                tbody.appendChild(tr);
+
+            });
+        } catch (err) {
+            console.error('Error al cargar usuarios:', err);
+        }
+    });
+
+
+</script>

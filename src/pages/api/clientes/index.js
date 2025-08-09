@@ -15,15 +15,15 @@ export async function GET({ request }) {
         const query = search
         ? esCedula
             ? {
-                sql: 'SELECT * FROM clientes WHERE cedula = ? ORDER BY nombre LIMIT ? OFFSET ?',
+                sql: 'SELECT * FROM clientes WHERE cedula = ? ORDER BY nombre COLLATE NOCASE ASC LIMIT ? OFFSET ?',
                 args: [search.trim(), limit, offset],
             }
             : {
-                sql: 'SELECT * FROM clientes WHERE nombre LIKE ? ORDER BY nombre LIMIT ? OFFSET ?',
+                sql: 'SELECT * FROM clientes WHERE nombre LIKE ? ORDER BY nombre COLLATE NOCASE ASC LIMIT ? OFFSET ?',
                 args: [`%${search.trim()}%`, limit, offset],
             }
         : {
-            sql: 'SELECT * FROM clientes ORDER BY nombre LIMIT ? OFFSET ?',
+            sql: 'SELECT * FROM clientes ORDER BY nombre COLLATE NOCASE ASC LIMIT ? OFFSET ?',
             args: [limit, offset],
             };
 
@@ -83,7 +83,9 @@ export async function POST({ request }) {
         // Insertar el nuevo cliente en la base de datos
         const result = await db.execute('INSERT INTO clientes (nombre, telefono, cedula) VALUES (?, ?, ?)',[nombre, telefono, cedula]);
 
-        return new Response(JSON.stringify({ message: "Cliente agregado exitosamente" }), { status: 201 });
+        const clienteAgregado = await db.execute('SELECT * FROM clientes WHERE cedula = ?', [cedula]);
+
+        return new Response(JSON.stringify({ message: "Cliente agregado exitosamente", cliente: clienteAgregado.rows }), { status: 201 });
 
 
     } catch (error) {
