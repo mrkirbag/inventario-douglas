@@ -22,10 +22,9 @@ let fechaCompleta = `${ano}-${mes}-${dia}`;
                 <input type="date" name="fecha" id="fecha" value={fechaCompleta}/>
             </div>
 
+            <input type="text" id="busquedaClientes" placeholder="Buscar cliente por cédula..." />
             <div class="select-container password-container">
-                <select name="cliente" id="cliente">
-                    <option value="">Selecciona un Cliente</option>
-                </select>
+                <select name="cliente" id="cliente"></select>
                 <span class="btn-cliente" id="abrirMenuClienteNuevo">+</span>
             </div>
 
@@ -36,27 +35,32 @@ let fechaCompleta = `${ano}-${mes}-${dia}`;
                 <input type="number" name="cedula" id="cedula" placeholder="Cédula del Cliente" min="0"/>
                 <button id="btnAgregarClienteNuevo">Agregar</button>
             </div>
+            
+            <button id="abrirModuloProductos">+ Seleccionar Productos</button>
+            
+            <div id="productos-container" class="modulo-agregar-producto" style="display: none;">
+                <input type="text" id="busquedaProductos" placeholder="Buscar producto por nombre o código..." />
+                <select name="producto" id="productoSelect"></select>
 
-            <div class="select-container">
+                <label for="cantidad">Cantidad:</label>
+                <input type="number" min="1" id="cantidad" placeholder="Ingrese la cantidad"/>
+
+                <label for="precio">Precio por Unidad:</label>
+                <input type="text" id="precio"/>
+                <span id="precioPesos"></span>
+
+                <div class="btns-container">
+                    <button id="agregarProducto">Agregar</button>
+                    <button id="cancelarVenta">Cancelar Venta</button>
+                </div>
+            </div>
+
+            <div class="select-container" id="tipoPago-container" style="display: none;">
                 <select name="tipoPago" id="tipoPago">
                     <option value="">Selecciona el Tipo de Pago</option>
                     <option value="contado">De Contado</option>
                     <option value="credito">A Crédito</option>
                 </select>
-            </div>
-            
-            <button id="abrirModuloProductos">+ Seleccionar Productos</button>
-            
-            <div id="productos-container" class="modulo-agregar-producto" style="display: none;">
-                <select name="producto" id="productoSelect">
-                    <option value="">Selecciona un Producto</option>
-                </select>
-
-                <input type="number" min="1" id="cantidad" placeholder="Ingrese la cantidad"/>
-                <div class="btns-container">
-                    <button id="agregarProducto">Agregar</button>
-                    <button id="cancelarVenta">Cancelar Venta</button>
-                </div>
             </div>
         </form>
             <div id="mensaje"></div>
@@ -149,6 +153,12 @@ let fechaCompleta = `${ano}-${mes}-${dia}`;
         text-align: center;
     }
 
+    #precioPesos{
+        margin-top: .25rem;
+        font-weight: bold;
+        font-size: .8rem;
+    }
+
 </style>
 
 <script type="module" is:inline>
@@ -183,10 +193,9 @@ import { mostrarError, mostrarMensaje } from '/mensajes.js';
 
         const fecha = document.getElementById('fecha').value;
         const clienteId = document.getElementById('cliente').value;
-        const tipoPago = document.getElementById('tipoPago').value;
 
         // Validar campos vacios
-        if (fecha === '' || clienteId === '' || tipoPago === '') {
+        if (fecha === '' || clienteId === '') {
             alert('Debes rellenar los campos anteriores antes de seleccionar productos.');
             return;
         }
@@ -198,6 +207,14 @@ import { mostrarError, mostrarMensaje } from '/mensajes.js';
         if (productosContainer.style.display === "flex") {
             abrirModuloProductos.style.display = "none"; 
         } 
+
+        const tipoPagoContainer = document.getElementById("tipoPago-container");
+        tipoPagoContainer.style.display = 
+            tipoPagoContainer.style.display === "none" ? "flex" : "none";
+        if (tipoPagoContainer.style.display === "flex") {
+            abrirModuloProductos.style.display = "none"; 
+        } 
+
     }); // abrir el modulo de productos
 
     btnImprimirFacturacion.addEventListener("click", async () => {
@@ -332,49 +349,142 @@ import { mostrarError, mostrarMensaje } from '/mensajes.js';
         }, 1000); // Esperar 1 segundo antes de redirigir
     });
 
-
     //FUNCIONES
     // Función para rellenar el select de clientes existentes
     async function rellenarSelectClientes() {
-
         const selectClientes = document.getElementById("cliente");
+        const busqueda = document.getElementById("busquedaClientes");
+
+        let clientesListados = [];
 
         try {
             const response = await fetch("/api/clientes");
             const data = await response.json();
 
-            // Rellenar select de clientes
-            data.forEach(cliente => {
-                const option = document.createElement("option");
-                option.value = cliente.id;
-                option.textContent = `${cliente.nombre.toUpperCase()} - ${cliente.cedula}`;
-                selectClientes.appendChild(option);
+            clientesListados = data;
+
+            // Función para renderizar opciones
+            const renderOpciones = (clientes) => {
+                selectClientes.innerHTML = ""; // Limpiar opciones previas
+
+                // Opción inicial vacía
+                const defaultOption = document.createElement("option");
+                defaultOption.value = "";
+                defaultOption.textContent = "Selecciona un cliente";
+                defaultOption.disabled = true;
+                defaultOption.selected = true;
+                selectClientes.appendChild(defaultOption);
+
+                // Mensaje si no hay registros para esa busqueda
+                if (clientes.length === 0) {
+                    const noResultsOption = document.createElement("option");
+                    noResultsOption.value = "";
+                    noResultsOption.textContent = "— Sin coincidencias para la búsqueda —";
+                    noResultsOption.disabled = true;
+                    selectClientes.appendChild(noResultsOption);
+                    return;
+                }
+
+                clientes.forEach(cliente => {
+                    const option = document.createElement("option");
+                    option.value = cliente.id;
+                    option.textContent = `${cliente.nombre.toUpperCase()} - ${cliente.cedula}`;
+                    selectClientes.appendChild(option);
+                });
+            };
+
+            // Render inicial
+            renderOpciones(clientesListados);
+
+            // Listener de búsqueda
+            busqueda.addEventListener("input", () => {
+                const filtro = busqueda.value.trim();
+
+                if (!filtro) {
+                    renderOpciones(clientesListados);
+                    return;
+                }
+
+                const clientesFiltrados = clientesListados.filter(cliente =>
+                    String(cliente.cedula || "").includes(filtro)
+                );
+
+                renderOpciones(clientesFiltrados);
             });
 
         } catch (error) {
-            console.error("Error al cargar los empleados:", error);
+            console.error("Error al cargar los clientes:", error);
         }
     }
 
     // Función para rellenar el select de productos existentes
     async function rellenarSelectProductos() {
 
+        const busqueda = document.getElementById("busquedaProductos");
         const productoSelect = document.getElementById("productoSelect");
 
+        let productosListados = [];
+
         try {
+
             const response = await fetch("/api/productos");
             const data = await response.json();
 
-            // Rellenar select de clientes
-            data.forEach(producto => {
-                const option = document.createElement("option");
-                option.value = producto.id;
-                option.textContent = `${producto.nombre.toUpperCase()} - ${producto.stock}u. - ${producto.venta}USD`;
-                productoSelect.appendChild(option);
+            productosListados = data;
+
+            const renderOpciones = (productos) => {
+                productoSelect.innerHTML = ""; // Limpiar opciones previas
+
+                // Opción inicial vacía
+                const defaultOption = document.createElement("option");
+                defaultOption.value = "";
+                defaultOption.textContent = "Selecciona un producto";
+                defaultOption.disabled = true;
+                defaultOption.selected = true;
+                productoSelect.appendChild(defaultOption);
+
+                // Mensaje si no hay registros para esa busqueda
+                if (productos.length === 0) {
+                    const noResultsOption = document.createElement("option");
+                    noResultsOption.value = "";
+                    noResultsOption.textContent = "— Sin coincidencias para la búsqueda —";
+                    noResultsOption.disabled = true;
+                    productoSelect.appendChild(noResultsOption);
+                    return;
+                }
+
+                productos.forEach(producto => {
+                    const option = document.createElement("option");
+                    option.value = producto.id;
+                    option.textContent = `${producto.codigo.toUpperCase()} - ${producto.nombre} - ${producto.stock}u. - ${producto.venta}USD`;
+                    productoSelect.appendChild(option);
+                });
+            };
+
+            // Render inicial
+            renderOpciones(productosListados);
+
+            // Listener de búsqueda
+            busqueda.addEventListener("input", () => {
+                const filtro = busqueda.value.trim().toLowerCase();
+
+                if (!filtro) {
+                    renderOpciones(productosListados);
+                    return;
+                }
+
+                const productosFiltrados = productosListados.filter(producto => {
+                    const nombre = String(producto.nombre || "").toLowerCase();
+                    const codigo = String(producto.codigo || "").toLowerCase();
+                    return nombre.includes(filtro) || codigo.includes(filtro);
+                });
+
+                renderOpciones(productosFiltrados);
             });
 
+
         } catch (error) {
-            console.error("Error al cargar los empleados:", error);
+            console.error("Error al cargar los productos:", error);
         }
     }
 
@@ -454,15 +564,16 @@ import { mostrarError, mostrarMensaje } from '/mensajes.js';
 
     // Función para guardar la venta
     async function guardarVenta() {
+
         const fecha = document.getElementById('fecha').value;
         const clienteId = document.getElementById('cliente').value;
-        const tipoPago = document.getElementById('tipoPago').value;
 
         //Verificar el estado de la venta
+        const tipoPago = 'pendiente de seleccion'
         const estado = 'pendiente'; // Por defecto, la venta inicia como pendiente
 
         // Validar campos vacios
-        if (fecha === '' || clienteId === '' || tipoPago === '') {
+        if (fecha === '' || clienteId === '') {
             alert('Debes rellenar los campos anteriores antes de seleccionar productos.');
             return;
         }
@@ -492,47 +603,89 @@ import { mostrarError, mostrarMensaje } from '/mensajes.js';
     // Función para agregar productos a la venta
     async function agregarProductoDetalle(ventaId) {
 
+        const productoSelect = document.getElementById("productoSelect");
+        const precioInput = document.getElementById("precio");
+
+        productoSelect.addEventListener("change", async () => {
+            const productoId = productoSelect.value;
+
+            if (!productoId) {
+                precioInput.value = "";
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/productos/${productoId}`);
+
+                if (!response.ok) {
+                    console.error("Error al obtener el producto:", response.status);
+                    precioInput.value = "";
+                    return;
+                }
+
+                const producto = await response.json();
+
+                if (typeof producto.venta === "number") {
+                    precioInput.value = producto.venta.toFixed(2); // Formato profesional
+                } else {
+                    precioInput.value = "";
+                }
+
+            } catch (error) {
+                console.error("Error de red o parsing:", error);
+                precioInput.value = "";
+            }
+        });
+
         const btnagregarProducto = document.getElementById("agregarProducto");
 
         btnagregarProducto.addEventListener("click", async (e) => {
             e.preventDefault();
 
-            const productoSelect = document.getElementById("productoSelect");
-            const cantidadInput = document.getElementById("cantidad");
-
             const productoId = productoSelect.value;
+            const cantidadInput = document.getElementById("cantidad");
             const cantidad = parseInt(cantidadInput.value);
+            const precio = parseFloat(precioInput.value);
 
-            // Validar campos vacios
-            if (productoId === '' || isNaN(cantidad) || cantidad <= 0) {
-                alert('Debes seleccionar un producto y una cantidad válida.');
-                return;
-            }
+            try {
 
-            // Traemos el producto seleccionado
-            const responseStock = await fetch(`/api/productos/${productoId}`);
-            if (!responseStock.ok) {
-                alert('Error al obtener el producto: ' + responseStock.status);
-                return;
-            }
-            const producto = await responseStock.json();
-            const codigo_producto = producto.codigo;
-            const nombre_producto = producto.nombre;
-            const precio_unitario = producto.venta;
+                const response = await fetch(`/api/productos/${productoId}`);
+                if (!response.ok) {
+                    throw new Error('Error al obtener el producto: ' + response.status);
+                }
+                const producto = await response.json();
 
-            // Validar que haya stock suficiente
-            if (cantidad > producto.stock) {
-                alert(`Cantidad insuficiente en stock. Stock disponible: ${producto.stock}`);
-                return;
-            } else {
-                // Enviar datos al servidor
+                if (!producto || !producto.stock) {
+                    alert('Producto no encontrado o sin stock disponible.');
+                    return;
+                }
+
+                    // Validaciones
+                if (cantidad === "" || isNaN(cantidad) || Number(cantidad) <= 0) {
+                    alert("Ingresa una cantidad válida mayor a cero.");
+                    return;
+                }
+
+                if (precio === "" || isNaN(precio) || Number(precio) <= 0) {
+                    alert("El precio del producto no es válido.");
+                    return;
+                }
+
+                if (Number(cantidad) > producto.stock) {
+                    alert(`Cantidad insuficiente en stock. Stock disponible: ${producto.stock}`);
+                    return;
+                }
+
+                const codigo_producto = producto.codigo;
+                const nombre_producto = producto.nombre;
+
                 try {
                     const response = await fetch("/api/detalleVentas", {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ ventaId, codigo_producto, nombre_producto, precio_unitario,  cantidad })
+                        body: JSON.stringify({ ventaId, codigo_producto, nombre_producto, precio,  cantidad })
                     });
 
                     // Verificar si la respuesta es exitosa
@@ -543,6 +696,7 @@ import { mostrarError, mostrarMensaje } from '/mensajes.js';
 
                     productoSelect.value = ''; // Limpiar el select de productos
                     cantidadInput.value = ''; // Limpiar el input de cantidad
+                    precioInput.value = ''; // Limpiar el input de precio
 
                     await mostrarProductosEnTabla(ventaId); // Actualizar la tabla de productos
 
@@ -550,6 +704,11 @@ import { mostrarError, mostrarMensaje } from '/mensajes.js';
                     console.error('Error al agregar el producto a la venta:', error);
                     alert('Error al agregar el producto a la venta. Por favor, inténtalo de nuevo.');
                 }
+                
+            } catch (error) {
+                console.error("Error al obtener el producto:", error);
+                alert('Error al obtener el producto. Por favor, inténtalo de nuevo.');
+                return;
             }
         });
 
@@ -609,6 +768,10 @@ import { mostrarError, mostrarMensaje } from '/mensajes.js';
             // Si no hay resultados, mostrar mensaje
             if(productos.message) {
                 mostrarError(productos.message);
+                tablaHeader.style.opacity = 0;
+                totalDeVenta.textContent = '';
+                btnConfirmacion.disabled = true;
+                btnConfirmacion.style.opacity = 0;
                 return;
             }
 
@@ -668,6 +831,10 @@ import { mostrarError, mostrarMensaje } from '/mensajes.js';
                     const confirmar = confirm(`¿Estás seguro de eliminar al producto ${producto.nombre_producto}?`);
                     if (!confirmar) return;
 
+                    // Resetear lista de productos
+                    totalVentaUSD = totalVentaUSD - producto.subtotal; // Actualizar total de la venta
+
+
                     // Enviar solicitud de eliminación al servidor
                     try {
                         const res = await fetch('/api/detalleVentas/', {
@@ -698,10 +865,14 @@ import { mostrarError, mostrarMensaje } from '/mensajes.js';
 
                 e.preventDefault();
 
+                const tipoPago = document.getElementById('tipoPago').value;
+                if (!tipoPago){
+                    mostrarError('Debe seleccionar el tipo de pago.');
+                    return;
+                }
+
                 const confirmar = confirm("¿Estás seguro de completar la venta?");
                 if (!confirmar) return;
-
-                console.log("Venta a completar:", ventaId, totalVentaUSD);
 
                 // Enviar solicitud para completar la venta
                 try {
@@ -710,7 +881,7 @@ import { mostrarError, mostrarMensaje } from '/mensajes.js';
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ ventaId, totalVentaUSD })
+                        body: JSON.stringify({ ventaId, totalVentaUSD, tipoPago })
                     });
 
                     if (!response.ok) {

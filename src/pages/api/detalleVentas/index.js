@@ -31,14 +31,14 @@ export async function POST({ request }) {
     try {
 
         const body = await request.json();
-        const { ventaId, codigo_producto, nombre_producto, precio_unitario,  cantidad } = body;
+        const { ventaId, codigo_producto, nombre_producto, precio,  cantidad } = body;
 
         // Validaciones
         const esDecimalPositivo = /^\d+(\.\d+)?$/;
         const esEnteroPositivo = /^\d+$/;
 
         const cantidadValida = esEnteroPositivo.test(cantidad) && parseInt(cantidad) > 0;
-        const precioUnitarioValido = esDecimalPositivo.test(precio_unitario) && parseFloat(precio_unitario) >= 0;
+        const precioUnitarioValido = esDecimalPositivo.test(precio) && parseFloat(precio) >= 0;
         
 
         if (!ventaId || !codigo_producto || !nombre_producto || !precioUnitarioValido || !cantidadValida) {
@@ -47,7 +47,7 @@ export async function POST({ request }) {
 
         // Parseo
         const cantidadFinal = parseInt(cantidad);
-        const precioUnitarioFinal = parseFloat(precio_unitario).toFixed(2);
+        const precioUnitarioFinal = parseFloat(precio).toFixed(2);
 
         // Insertar el nuevo cliente en la base de datos
         const result = await db.execute(`INSERT INTO detalle_venta (id_venta, codigo_producto, nombre_producto, precio_unitario, cantidad) VALUES (?, ?, ?, ?, ?)`,

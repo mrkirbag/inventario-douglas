@@ -3,13 +3,12 @@ import { db } from '../db';
 export async function PUT({ request }) {
     try {
         const body = await request.json();
-        const { ventaId, totalVentaUSD } = body;
+        const { ventaId, totalVentaUSD, tipoPago } = body;
 
         // Validaciones
-        if (!ventaId || isNaN(parseFloat(totalVentaUSD))) {
+        if (!ventaId || isNaN(parseFloat(totalVentaUSD)) || !tipoPago) {
             return new Response('Datos inválidos', { status: 400 });
         }
-
 
         const datosVenta = await db.execute('SELECT * FROM ventas WHERE id = ?', [ventaId]);
         const venta = datosVenta.rows[0];
@@ -19,11 +18,11 @@ export async function PUT({ request }) {
         let estado_final = 'pendiente'; // por defecto
         
         // Actualizar el estado de la venta según el tipo de pago
-        if (venta.tipo_pago === 'contado') {
+        if (tipoPago === 'contado') {
             estado_final = 'completado';
         } 
 
-        const queryActualizacion = await db.execute(`UPDATE ventas SET total_usd = ?, estado = ? WHERE id = ?`,[total_final, estado_final, ventaId]);
+        const queryActualizacion = await db.execute(`UPDATE ventas SET total_usd = ?, estado = ?, tipo_pago = ? WHERE id = ?`,[total_final, estado_final, tipoPago, ventaId]);
 
         if (queryActualizacion.affectedRows === 0) {
             return new Response('Error al actualizar la venta', { status: 500 });
