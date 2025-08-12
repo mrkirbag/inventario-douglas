@@ -224,7 +224,7 @@ import { mostrarError, mostrarMensaje } from '/mensajes.js';
         btnConfirmacion.style.opacity = "0";
         btnConfirmacion.disabled = true;
 
-        const clienteDatos = { id: '', nombre: '', cedula: '' };
+        const clienteDatos = { id: '', nombre: '', cedula: '', telefono: ''};
         const clienteSelect = document.getElementById("cliente").value;
 
         try {
@@ -234,6 +234,7 @@ import { mostrarError, mostrarMensaje } from '/mensajes.js';
             clienteDatos.id = cliente.id;
             clienteDatos.nombre = cliente.nombre;
             clienteDatos.cedula = cliente.cedula;
+            clienteDatos.telefono = cliente.telefono;
         } catch (error) {
             console.error(error);
         }
@@ -262,7 +263,7 @@ import { mostrarError, mostrarMensaje } from '/mensajes.js';
             <!DOCTYPE html>
             <html>
                 <head>
-                    <title>Factura Media Carta</title>
+                    <title>Nota de Entrega</title>
                     <style>
                         @media print {
                             @page {
@@ -315,9 +316,9 @@ import { mostrarError, mostrarMensaje } from '/mensajes.js';
                     <h3>Rif. J-506718936 / 0424-720.17.82</h3>
                     <h4>SERVICIO TÉCNICO DE AIRES ACONDICIONADOS Y REFRIGERACIÓN</h4>
                     <hr />
-                    <h2>Factura de Venta</h2>
+                    <h2>NOTA DE ENTREGA</h2>
                     <p><strong>Fecha:</strong> ${fecha}</p>
-                    <p><strong>Cliente:</strong> ${clienteDatos.nombre.toUpperCase()} - C.I. ${clienteDatos.cedula}</p>
+                    <p><strong>Cliente:</strong> ${clienteDatos.nombre.toUpperCase()} - C.I. ${clienteDatos.cedula} - ${clienteDatos.telefono}</p>
                     <p><strong>Tipo de Pago:</strong> ${tipoPago}</p>
 
                     <table>

@@ -12,11 +12,13 @@ export async function GET({ request }) {
                                             c.nombre AS cliente,
                                             c.cedula AS cedula_cliente,
                                             v.total_usd,
-                                            v.estado
+                                            v.estado,
+                                            v.tipo_pago
                                             FROM ventas v
                                             JOIN clientes c ON v.cliente_id = c.id
                                             WHERE v.fecha = ?
                                             AND v.estado != 'cancelado'
+                                            AND v.tipo_pago != 'pendiente de seleccion'
                                             ORDER BY c.nombre ASC;
                                         `, [fecha]);
 

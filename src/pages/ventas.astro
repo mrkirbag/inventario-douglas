@@ -21,6 +21,7 @@ import Layout from '../layouts/Layout.astro';
                 <th>Fecha</th>
                 <th>Cliente</th>
                 <th>Total</th>
+                <th>Tipo Pago</th>
                 <th>Estado</th>
                 <th>Acciones</th>
             </tr>
@@ -94,6 +95,7 @@ import Layout from '../layouts/Layout.astro';
                                         ${ventas.total_usd} USD<br />
                                         ${totalCOP} COP
                                     </td>
+                                    <td>${ventas.tipo_pago.toUpperCase()}</td>
                                     <td>${ventas.estado}</td>
                                 `;
 
