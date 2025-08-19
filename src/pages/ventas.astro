@@ -46,7 +46,7 @@ import Layout from '../layouts/Layout.astro';
 
 <script type="module" is:inline>
 
-    import { noRegistros } from "/mensajes.js";
+    import { noRegistros, mostrarError, mostrarMensaje } from "/mensajes.js";
 
     const inputBusqueda = document.getElementById("inputBusqueda");
 
@@ -55,7 +55,10 @@ import Layout from '../layouts/Layout.astro';
         // Elementos del DOM
         const tablaVentasHead = document.getElementById('tablaVentasHead');
         const tbody = document.getElementById('listaVentas');
-        tbody.innerHTML = ""; // Limpiar el tbody antes de cargar nuevos datos
+        const mensaje = document.querySelector('#mensaje');
+
+        tbody.innerHTML = "";
+        mensaje.style.display = "none";
 
         try {
             const res = await fetch(`/api/ventas?fecha=${inputBusqueda.value}`);
@@ -64,6 +67,7 @@ import Layout from '../layouts/Layout.astro';
             // Validar que no haya ventas
             if (ventas.message) {
                 tbody.innerHTML = "";
+                tablaVentasHead.style.opacity = 0;
                 noRegistros(ventas.message)
                 return;
             }
@@ -107,28 +111,54 @@ import Layout from '../layouts/Layout.astro';
                 const btnEliminar = document.createElement('button');
                 btnEliminar.classList.add('btn-eliminar');
                 btnEliminar.textContent = 'ANULAR';
-                btnEliminar.disabled = true;
 
                 btnEliminar.onclick = async () => {
 
                     // Confirmación antes de eliminar
-                    const confirmar = confirm(`¿Estás seguro de eliminar al usuario ${usuario.nombre}?`);
+                    const confirmar = confirm(`¿Estás seguro de ANULAR la venta del cliente ${ventas.cliente.toUpperCase()} C.I. ${ventas.cedula_cliente} con fecha de ${fechaFormateada}?`);
                     if (!confirmar) return;
 
                     // Enviar solicitud de eliminación al servidor
                     try {
-                        const res = await fetch('/api/usuarios/', {
-                        method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id: usuario.id })
+                        const res = await fetch(`/api/ventas/anularVenta`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: ventas.id })
                         });
 
-                        window.location.reload();
+                        // Validar
+                        if(res.status === 409 || res.status === 404){
+                            const data = await res.json();
+                            mensaje.style.display = 'block';
+                            mostrarError(data.message);
+                            return; 
+                        }
+
+                        const data = await res.json();
+                        mensaje.style.display = 'block';
+                        mostrarMensaje(data.message); 
+
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+
                     } catch(error) {
-                        console.error("Error eliminando usuario:", error);
+                        console.error("Error anulando ventas:", error);
                     }    
                 }
                 tdAcciones.appendChild(btnEliminar);
+
+                // Boton de ver informacion
+                const btnVerInfo = document.createElement('button');
+                btnVerInfo.classList.add('btn-editar');
+                btnVerInfo.textContent = 'VER INFO';
+
+                btnVerInfo.onclick = () => {
+                    window.location.href = `/ventas/${ventas.id}`;
+                };
+
+                tdAcciones.appendChild(btnVerInfo);
+
 
                 // Adjuntar acciones al tr
                 tr.appendChild(tdAcciones);

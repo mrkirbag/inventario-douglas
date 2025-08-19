@@ -1,0 +1,180 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const {id} = Astro.params;
+---
+
+<Layout>
+
+    <div class="btn-add_container">
+        <a class="btn-add" href="/ventas">Regresar</a>
+    </div>
+
+    <header>
+        <h3>EMPRENDIMIENTO</h3>
+        <h2>DOUGLAS SÁNCHEZ 5</h2>
+        <h3>Rif. J-506718936 / 0424-720.17.82</h3>
+        <h4>SERVICIO TÉCNICO DE AIRES ACONDICIONADOS Y REFRIGERACIÓN</h4>
+    </header>
+
+    <main>
+        <section class="datos-cliente">
+            <p>Nombre: <span id="clienteNombre"></span></p>
+            <p>C.I. <span id="clienteCedula"></span></p>
+            <p>Telf: <span id="clienteTelefono"></span></p>
+            <p>Fecha de Compra: <span id="fecha"></span></p>
+            <p>Tipo de Pago: <span id="tipoPago"></span></p>
+        </section>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Nombre</th>
+                    <th>P. Unitario</th>
+                    <th>Cantidad</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody id="listaProductos"></tbody>
+        </table>
+
+        <section class="total">
+            <p>El total de la venta es de</p>
+            <p><span id="total"></span> USD</p>
+            <p>o</p>
+            <p><span id="totalCOP"></span> COP</p>
+        </section>
+    </main>
+
+    <div id="mensaje"></div>
+</Layout>
+
+<style>
+
+    header {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+
+        & h2{
+            font-size: 1.5rem;
+        }
+
+        & h3{
+            font-size: 1rem;
+        }
+    }
+
+    .datos-cliente {
+        display: flex;
+        flex-direction: column;
+        gap: .25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    span {
+        font-weight: 700;
+        font-size: 1rem
+    }
+    
+    p {
+        font-size: .85rem;
+    }
+
+    .total {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        justify-content: center;
+        margin-top: 1.5rem;
+    }
+
+
+</style>
+
+<script type="module" is:inline>
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const id = location.pathname.split("/").pop();
+        //Datos a rellenar del cliente
+        const clienteNombre = document.querySelector('#clienteNombre');
+        const clienteCedula = document.querySelector('#clienteCedula');
+        const clienteTelefono = document.querySelector('#clienteTelefono');
+        //Datos a rellenar de la venta
+        const fecha = document.querySelector('#fecha');
+        const tipoPago = document.querySelector('#tipoPago');
+        const total = document.querySelector('#total');
+        const totalCOP = document.querySelector('#totalCOP');
+        const listaProductos = document.querySelector('#listaProductos');
+
+        try {
+
+            const res = await fetch(`/api/ventas/${id}`);
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(`Status ${res.status} Mensaje ${errorText}`);
+            }
+
+            const data = await res.json();
+
+            console.log(data)
+
+            // Cliente
+            clienteNombre.textContent = data.cliente.nombre.toUpperCase();
+            clienteCedula.textContent = data.cliente.cedula;
+            clienteTelefono.textContent = data.cliente.telefono;
+
+            // Formatear Fecha
+            const fechaObjeto = new Date(data.venta.fecha);
+            const opcionesFormato = { day: "2-digit", month: "2-digit", year: "numeric" };
+            const fechaFormateada = fechaObjeto.toLocaleDateString("es-ES", opcionesFormato);
+
+            // Venta
+            fecha.textContent = fechaFormateada;
+            tipoPago.textContent = data.venta.tipo_pago.toUpperCase();
+            total.textContent = data.venta.monto_total.toFixed(2);
+
+            //Traer la tasa para los precios:
+            const responseTasa = await fetch('/api/tasa');
+            if (!responseTasa.ok) throw new Error('Error al obtener la tasa de cambio');
+            const dataTasa = await responseTasa.json();
+            const tasa = Number(dataTasa.valor);
+
+            totalCOP.textContent = Number(data.venta.monto_total) * Number(tasa);
+
+            // Productos
+            listaProductos.innerHTML = '';
+
+            data.productos.forEach(p => {
+                const row = document.createElement('tr');
+                const pUnitarioPesos = p.precio_unitario * tasa;
+                const subtotalPesos = p.subtotal * tasa
+                row.innerHTML = `
+                                    <td>${p.codigo_producto.toUpperCase()}</td>
+                                    <td>${p.nombre_producto.toUpperCase()}</td>
+                                    <td>
+                                        ${p.precio_unitario.toFixed(2)} USD
+                                        <br />
+                                        ${pUnitarioPesos} COP
+                                        
+                                    </td>
+                                    <td>${p.cantidad}</td>
+                                    <td>
+                                        ${p.subtotal.toFixed(2)} USD
+                                        <br />
+                                        ${subtotalPesos} COP
+                                    </td>
+                                `;
+                listaProductos.appendChild(row);
+            });
+
+        }catch(error){
+            console.error(error)
+        }
+
+
+    });
+</script>
