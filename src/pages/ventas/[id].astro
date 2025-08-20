@@ -128,9 +128,10 @@ const {id} = Astro.params;
             clienteTelefono.textContent = data.cliente.telefono;
 
             // Formatear Fecha
-            const fechaObjeto = new Date(data.venta.fecha);
-            const opcionesFormato = { day: "2-digit", month: "2-digit", year: "numeric" };
-            const fechaFormateada = fechaObjeto.toLocaleDateString("es-ES", opcionesFormato);
+            const fechaOriginal = data.venta.fecha;
+            const [ano, mes, dia] = fechaOriginal.split('-');
+            const fechaFormateada = `${dia}/${mes}/${ano}`;
+
 
             // Venta
             fecha.textContent = fechaFormateada;

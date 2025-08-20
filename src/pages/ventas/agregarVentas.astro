@@ -1,11 +1,16 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 
-const fechaHoy = new Date();
-const ano = fechaHoy.getFullYear();
-const mes = String(fechaHoy.getMonth() + 1).padStart(2, '0'); 
-const dia = String(fechaHoy.getDate()).padStart(2, '0');
-let fechaCompleta = `${ano}-${mes}-${dia}`;
+const fechaVenezuela = new Intl.DateTimeFormat('es-VE', {
+        timeZone: 'America/Caracas',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).format(new Date());
+
+// Convertir de formato DD/MM/YYYY a YYYY-MM-DD
+const [dia, mes, ano] = fechaVenezuela.split('/');
+const fechaCompleta = `${ano}-${mes}-${dia}`;
 
 ---
 
