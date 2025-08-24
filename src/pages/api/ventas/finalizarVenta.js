@@ -20,6 +20,11 @@ export async function PUT({ request }) {
         // Actualizar el estado de la venta según el tipo de pago
         if (tipoPago === 'contado') {
             estado_final = 'completado';
+        }
+        
+        // Agregar la venta a creditos si el tipo de pago es credito
+        if (tipoPago === 'credito'){
+            await db.execute(`INSERT INTO creditos (id_venta, saldo_pendiente) VALUES (?, ?)`,[ventaId, total_final]);
         } 
 
         const queryActualizacion = await db.execute(`UPDATE ventas SET total_usd = ?, estado = ?, tipo_pago = ? WHERE id = ?`,[total_final, estado_final, tipoPago, ventaId]);

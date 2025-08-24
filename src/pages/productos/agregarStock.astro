@@ -19,10 +19,12 @@ const {id} = Astro.params;
         <p>Precio de venta por unidad: <span id="venta" class="span"></span> USD</p>
     </div>
 
-    <form id="formulario">
-        <input type="number" name="stockNuevo" id="stockNuevo" placeholder="¿Cuántas unidades desea agregar?" min="0"/>
-        <button type="submit">Actualizar Stock</button>
-    </form>
+    <div class="form-container">
+        <form id="formulario">
+            <input type="number" name="stockNuevo" id="stockNuevo" placeholder="¿Cuántas unidades desea agregar?" min="0"/>
+            <button type="submit">Actualizar Stock</button>
+        </form>
+    </div>
 
     <div id="mensaje"></div>
 </Layout>

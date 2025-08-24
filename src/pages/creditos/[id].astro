@@ -1,0 +1,255 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const {id} = Astro.params;
+---
+
+<Layout>
+    <h1>Venta a Crédito</h1>
+
+    <div class="btn-add_container">
+        <a class="btn-add" href="/creditos">Regresar</a>
+    </div>
+
+    <main>
+        <div class="venta-container">
+            <section class="datos-cliente">
+                <p>Nombre: <span id="clienteNombre"></span></p>
+                <p>C.I. <span id="clienteCedula"></span></p>
+                <p>Telf. <span id="clienteTelefono"></span></p>
+                <p>Fecha de Compra: <span id="fecha"></span></p>
+                <p>Tipo de Pago: <span id="tipoPago"></span></p>
+                <p>Estado: <span id="estado"></span></p>
+            </section>
+            <section class="tabla-productos">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listaProductos"></tbody>
+                </table>
+            </section>
+        </div>
+
+
+        <section class="datos-credito">
+            <h2>Información</h2>
+            <p>Monto total a pagar: <span id="total"></span> USD / <span id="totalCOP"></span> COP</p>
+            <p>Saldo Pendiente: <span id="pendiente"></span> USD / <span id="pendienteCOP"></span> COP</p>
+            <p>Saldo Abonado: <span id="abonado"></span> USD / <span id="abonadoCOP"></span> COP</p>
+            <p>Número de abonos hechos: <span id="nroAbonos"></span></p>
+            <div class="btn-add_container">
+                <a class="btn-add" href=`/creditos/agregarAbonos/${id}`>Agregar Abono</a>
+            </div>
+        </section>
+
+        <table>
+            <thead id="abonosThead">
+                <tr>
+                    <th>Fecha de Realización</th>
+                    <th>Monto del Abono</th>
+                </tr>
+            </thead>
+            <tbody id="listaAbonos"></tbody>
+        </table>
+
+    </main>
+
+    <div id="mensaje"></div>
+</Layout>
+
+<style>
+
+    .venta-container {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 2rem;
+        flex-wrap: wrap;
+        margin-top: 2rem;
+    }
+
+    .datos-cliente {
+        min-width: 280px;
+        max-width: 320px;
+        padding: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        background-color: #f9f9f9;
+        box-shadow: 0 0 4px rgba(0,0,0,0.1);
+    }
+
+    .tabla-productos {
+        flex: 1;
+        min-width: 300px;
+        max-width: 700px;
+        overflow-x: auto;
+    }
+
+    .tabla-productos table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .tabla-productos th,
+    .tabla-productos td {
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        text-align: left;
+    }
+
+    .tabla-productos th {
+        background-color: #f0f0f0;
+        font-weight: bold;
+    }
+
+    .datos-credito {
+        margin-top: 2rem;
+        padding: 1rem;
+        border-top: 1px solid #ccc;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    span {
+        font-weight: 700;
+        font-size: 1rem
+    }
+    
+    p {
+        font-size: .85rem;
+    }
+
+
+</style>
+
+<script type="module" is:inline>
+
+    import { noRegistros } from '../../../public/mensajes';
+
+    document.addEventListener('DOMContentLoaded', rellenarCampos)
+
+    const id = location.pathname.split("/").pop();
+
+    async function rellenarCampos(){
+
+        try {
+            
+            const response = await fetch(`/api/creditos/${id}`);
+            if (!response.ok) throw new Error("Error al obtener crédito");
+            const data = await response.json();
+
+            // Datos del cliente
+            document.querySelector('#clienteNombre').textContent = data.cliente.nombre.toUpperCase();
+            document.querySelector('#clienteCedula').textContent = data.cliente.cedula;
+            document.querySelector('#clienteTelefono').textContent = data.cliente.telefono;
+
+            // Formatear fecha
+            const fechaObjeto = new Date(data.venta.fecha + "T00:00:00");
+            const opcionesFormato = { day: "2-digit", month: "2-digit", year: "numeric" };
+            const fechaFormateada = fechaObjeto.toLocaleDateString("es-ES", opcionesFormato);
+
+            document.querySelector('#fecha').textContent = fechaFormateada;
+            document.querySelector('#tipoPago').textContent = data.venta.tipo_pago.toUpperCase();
+            document.querySelector('#estado').textContent = data.venta.estado.toUpperCase();
+
+            // Obtener tasa de cambio
+            const tasaFetch = await fetch('/api/tasa');
+            if (!tasaFetch.ok) throw new Error("Error al obtener tasa");
+            const dataTasa = await tasaFetch.json();
+            const tasa = Number(dataTasa.valor);
+
+            // Productos
+            const tbody = document.querySelector('#listaProductos');
+            data.productos.forEach(p => {
+                const tr = document.createElement('tr');
+                const subtotalPesos = Number(tasa * p.subtotal);
+                tr.innerHTML = `
+                                    <td>
+                                        ${p.codigo_producto.toUpperCase()}
+                                        <br />
+                                        ${p.nombre_producto.toUpperCase()}
+                                    </td>
+                                    <td>${p.cantidad}</td>
+                                    <td>
+                                        ${p.subtotal.toFixed(2)} USD
+                                        <br />
+                                        ${subtotalPesos} COP
+                                    </td>
+                                `;
+                tbody.appendChild(tr);
+            });
+
+            // Datos del credito
+            document.querySelector('#total').textContent = data.venta.monto_total;
+            const totalCOP = Number(tasa * data.venta.monto_total);
+            document.querySelector('#totalCOP').textContent = totalCOP;
+
+            document.querySelector('#pendiente').textContent = data.credito.saldo_pendiente;
+            const pendienteCOP = Number(tasa * data.credito.saldo_pendiente);
+            document.querySelector('#pendienteCOP').textContent = pendienteCOP;
+
+            // Abonos
+            const totalAbonadoText = document.querySelector('#abonado');
+            const totalAbonadoCopText = document.querySelector('#abonadoCOP');
+
+            // Tabla de Abonos y totales
+            const listaAbonosTbody = document.querySelector('#listaAbonos');
+            const abonosThead = document.querySelector('#abonosThead');
+            const nroAbonos = document.querySelector('#nroAbonos');
+
+            const resAbonos = await fetch(`/api/abonos/${id}`);
+            const dataAbonos = await resAbonos.json()
+
+            // Validar si no se han hecho abonos
+            if(dataAbonos.message){
+                listaAbonosTbody.innerHTML = '';
+                abonosThead.style.opacity = 0;
+                noRegistros(dataAbonos.message);
+                return;
+            }
+
+            let totalAbonadoUsd = 0;
+            let acumulador = 0;
+
+            dataAbonos.forEach(abono => {
+                // Acumulador del total
+                acumulador += 1;
+                totalAbonadoUsd += abono.monto;
+                // Formatear fecha
+                const fechaObjeto = new Date(abono.fecha + "T00:00:00");
+                const opcionesFormato = { day: "2-digit", month: "2-digit", year: "numeric" };
+                const fechaFormateada = fechaObjeto.toLocaleDateString("es-ES", opcionesFormato);
+
+                const tr = document.createElement('tr');
+                const montoCop = tasa * abono.monto;
+
+                tr.innerHTML = `    
+                                    <td>${fechaFormateada}</td>
+                                    <td>
+                                        ${abono.monto} USD
+                                        <br />    
+                                        ${montoCop} COP
+                                    </td>
+                                `;
+
+                listaAbonosTbody.appendChild(tr);
+
+            });
+
+            totalAbonadoText.textContent = totalAbonadoUsd;
+            totalAbonadoCopText.textContent = Number(totalAbonadoUsd * tasa);
+            nroAbonos.textContent = acumulador;
+
+        } catch (error) {
+
+        }
+    }
+
+    
+</script>
