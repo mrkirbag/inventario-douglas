@@ -168,7 +168,7 @@ const {id} = Astro.params;
             const tbody = document.querySelector('#listaProductos');
             data.productos.forEach(p => {
                 const tr = document.createElement('tr');
-                const subtotalPesos = Number(tasa * p.subtotal);
+                const subtotalPesos = Math.ceil(tasa * p.subtotal);
                 tr.innerHTML = `
                                     <td>
                                         ${p.codigo_producto.toUpperCase()}
@@ -187,11 +187,11 @@ const {id} = Astro.params;
 
             // Datos del credito
             document.querySelector('#total').textContent = data.venta.monto_total;
-            const totalCOP = Number(tasa * data.venta.monto_total);
+            const totalCOP = Math.ceil(tasa * data.venta.monto_total);
             document.querySelector('#totalCOP').textContent = totalCOP;
 
             document.querySelector('#pendiente').textContent = data.credito.saldo_pendiente;
-            const pendienteCOP = Number(tasa * data.credito.saldo_pendiente);
+            const pendienteCOP = Math.ceil(tasa * data.credito.saldo_pendiente);
             document.querySelector('#pendienteCOP').textContent = pendienteCOP;
 
             // Abonos
@@ -227,12 +227,12 @@ const {id} = Astro.params;
                 const fechaFormateada = fechaObjeto.toLocaleDateString("es-ES", opcionesFormato);
 
                 const tr = document.createElement('tr');
-                const montoCop = tasa * abono.monto;
+                const montoCop = Math.ceil(tasa * abono.monto);
 
                 tr.innerHTML = `    
                                     <td>${fechaFormateada}</td>
                                     <td>
-                                        ${abono.monto} USD
+                                        ${abono.monto.toFixed(2)} USD
                                         <br />    
                                         ${montoCop} COP
                                     </td>
