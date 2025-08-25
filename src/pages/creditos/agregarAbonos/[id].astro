@@ -28,7 +28,7 @@ const fechaCompleta = `${ano}-${mes}-${dia}`;
     <div class="form-container">
         <form id="formulario">
             <input type="date" name="fecha" id="fecha" value={fechaCompleta}>
-            <input type="number" name="montoAbono" id="montoAbono" placeholder="¿Cuánto desea abonar en USD?" min="0"/>
+            <input type="text" name="montoAbono" id="montoAbono" placeholder="¿Cuánto desea abonar en USD?" />
             <button type="submit">Registrar Abono</button>
         </form>
     </div>
@@ -98,7 +98,9 @@ const fechaCompleta = `${ano}-${mes}-${dia}`;
         const montoAbonoInput = document.querySelector('#montoAbono');
         const fechaInput = document.querySelector('#fecha');
 
-        const montoAbono = parseFloat(montoAbonoInput.value);
+        const raw = montoAbonoInput.value.trim().replace(',', '.');
+        const montoAbono = parseFloat(raw);
+
         const fecha = fechaInput.value?.trim();
 
         // Validar monto
