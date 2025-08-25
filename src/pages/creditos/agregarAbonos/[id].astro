@@ -73,7 +73,7 @@ const fechaCompleta = `${ano}-${mes}-${dia}`;
             const response = await fetch(`/api/creditos/${id}`);
             const data = await response.json();
 
-            const saldo = data.credito.saldo_pendiente;
+            const saldo = data.credito.saldo_pendiente.toFixed(2);
             saldoPendiente.textContent = saldo;
 
             // Obtener tasa de cambio
@@ -81,7 +81,7 @@ const fechaCompleta = `${ano}-${mes}-${dia}`;
             const dataTasa = await tasaFetch.json();
             const tasa = Number(dataTasa.valor);
 
-            saldoPendienteCOP.textContent = Number(tasa * saldo);
+            saldoPendienteCOP.textContent = Math.ceil(tasa * saldo);
 
         } catch (error){
             console.error('Error al cargar datos de crédito o tasa:', error);
