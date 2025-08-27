@@ -10,7 +10,8 @@ const {id} = Astro.params;
         <a class="btn-add" href="/ventas">Regresar</a>
     </div>
 
-    <header>
+
+    <header id="headerImp">
         <h3>EMPRENDIMIENTO</h3>
         <h2>DOUGLAS SÁNCHEZ 5</h2>
         <h3>Rif. J-506718936 / 0424-720.17.82</h3>
@@ -18,7 +19,7 @@ const {id} = Astro.params;
     </header>
 
     <main>
-        <section class="datos-cliente">
+        <section class="datos-cliente" id="datosClienteImp">
             <p>Nombre: <span id="clienteNombre"></span></p>
             <p>C.I. <span id="clienteCedula"></span></p>
             <p>Telf: <span id="clienteTelefono"></span></p>
@@ -26,7 +27,7 @@ const {id} = Astro.params;
             <p>Tipo de Pago: <span id="tipoPago"></span></p>
         </section>
 
-        <table>
+        <table id="table">
             <thead>
                 <tr>
                     <th>Código</th>
@@ -39,13 +40,17 @@ const {id} = Astro.params;
             <tbody id="listaProductos"></tbody>
         </table>
 
-        <section class="total">
+        <section class="total" id="totalImp">
             <p>El total de la venta es de</p>
             <p><span id="total"></span> USD</p>
             <p>o</p>
             <p><span id="totalCOP"></span> COP</p>
         </section>
     </main>
+
+    <div class="btn-add_container">
+        <a class="btn-add" id="imprimir">Imprimir</a>
+    </div>
 
     <div id="mensaje"></div>
 </Layout>
@@ -177,5 +182,78 @@ const {id} = Astro.params;
         }
 
 
+    });
+
+    const btnImprimir = document.querySelector('#imprimir');
+
+    btnImprimir.addEventListener('click', () => {
+
+        const headerImp = document.querySelector('#headerImp');
+        const datosClienteImp = document.querySelector('#datosClienteImp');
+        const table = document.querySelector('#table');
+        const totalImp = document.querySelector('#totalImp');
+
+        // Creamos una ventana temporal para imprimir
+        const ventana = window.open('', '', 'width=800,height=600');
+        ventana.document.write(`
+                                <html>
+                                    <head>
+                                        <title>Impresión de venta</title>
+                                        <style>
+                                            body {
+                                            font-family: sans-serif;
+                                            padding: 20px;
+                                            margin: 0;
+                                            }
+
+                                            .seccion {
+                                            margin-bottom: 30px;
+                                            }
+
+                                            .centrado {
+                                            text-align: center;
+                                            }
+
+                                            .izquierda {
+                                            text-align: left;
+                                            }
+
+                                            table {
+                                            border-collapse: collapse;
+                                            width: 100%;
+                                            margin: 0 auto;
+                                            }
+
+                                            th, td {
+                                            border: 1px solid #ccc;
+                                            padding: 8px;
+                                            text-align: left;
+                                            }
+                                        </style>
+                                    </head>
+                                    <body>
+                                        <div class="seccion centrado">
+                                            ${headerImp?.outerHTML || '<h2>Encabezado no disponible</h2>'}
+                                        </div>
+
+                                        <div class="seccion izquierda">
+                                            ${datosClienteImp?.outerHTML || '<p>Datos del cliente no disponibles</p>'}
+                                        </div>
+
+                                        <div class="seccion centrado">
+                                            ${table?.outerHTML || '<p>Tabla no disponible</p>'}
+                                        </div>
+
+                                        <div class="seccion izquierda">
+                                            ${totalImp?.outerHTML || '<p>Total no disponible</p>'}
+                                        </div>
+                                    </body>
+                                </html>
+                                `);
+
+        ventana.document.close();
+        ventana.focus();
+        ventana.print();
+        ventana.close();
     });
 </script>

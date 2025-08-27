@@ -15,7 +15,10 @@ import Layout from '../layouts/Layout.astro';
         <input type="date" id="inputBusqueda"/>
     </div>
 
-    <table>
+    <div class="btn-add_container">
+        <a class="btn-add" id="imprimir" style="display: none;">Imprimir</a>
+    </div>
+    <table id="tabla">
         <thead id="tablaVentasHead" style="opacity: 0;">
             <tr>
                 <th>Fecha</th>
@@ -56,6 +59,7 @@ import Layout from '../layouts/Layout.astro';
         const tablaVentasHead = document.getElementById('tablaVentasHead');
         const tbody = document.getElementById('listaVentas');
         const mensaje = document.querySelector('#mensaje');
+        const btnImprimir = document.querySelector('#imprimir'); 
 
         tbody.innerHTML = "";
         mensaje.style.display = "none";
@@ -67,12 +71,14 @@ import Layout from '../layouts/Layout.astro';
             // Validar que no haya ventas
             if (ventas.message) {
                 tbody.innerHTML = "";
+                btnImprimir.style.display = 'none';
                 tablaVentasHead.style.opacity = 0;
                 noRegistros(ventas.message)
                 return;
             }
 
             tablaVentasHead.style.opacity = 1;
+            btnImprimir.style.display = 'block'
 
             // Obtener tasa de cambio
             const tasaFetch = await fetch('/api/tasa');
@@ -168,6 +174,46 @@ import Layout from '../layouts/Layout.astro';
         } catch (err) {
             console.error('Error al cargar usuarios:', err);
         }
+    });
+
+    const btnImprimir = document.querySelector('#imprimir');
+
+    btnImprimir.addEventListener('click', () => {
+        
+        const tabla = document.getElementById('tabla');
+        if (!tabla) return;
+
+        const tablaClon = tabla.cloneNode(true);
+
+        // Eliminamos la última celda de cada fila
+        for (const fila of tablaClon.rows) {
+            if (fila.cells.length > 0) {
+            fila.deleteCell(fila.cells.length - 1);
+            }
+        }
+
+        // Creamos una ventana temporal para imprimir
+        const ventana = window.open('', '', 'width=800,height=600');
+        ventana.document.write(`
+                                <html>
+                                    <head>
+                                        <title>Impresión de ventas</title>
+                                        <style>
+                                            body { font-family: sans-serif; padding: 20px; }
+                                            table { border-collapse: collapse; width: 100%; }
+                                            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+                                        </style>
+                                    </head>
+                                    <body>
+                                        <h1>REPORTE DE VENTAS DEL DIA</h1>
+                                        ${tablaClon.outerHTML}
+                                    </body>
+                                </html>
+                            `);
+        ventana.document.close();
+        ventana.focus();
+        ventana.print();
+        ventana.close();
     });
 
 
