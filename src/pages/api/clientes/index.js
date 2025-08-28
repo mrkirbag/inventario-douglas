@@ -99,24 +99,46 @@ export async function DELETE({ request }) {
         const body = await request.json();
         const { id } = body;
 
-        // Validar que se haya proporcionado un ID
         if (!id) {
-            return new Response('Falta el ID del cliente', { status: 400 });
+            return new Response(JSON.stringify({ error: 'Falta el ID del cliente' }), { status: 400 });
         }
+        
+        await db.execute(`
+                            DELETE FROM abonos_credito
+                            WHERE id_credito IN (
+                                SELECT id FROM creditos
+                                WHERE id_venta IN (
+                                    SELECT id FROM ventas WHERE cliente_id = ?
+                                )
+                            )
+                        `, [id]);
 
-        // Eliminar el cliente de la base de datos
-        const result = await db.execute('DELETE FROM clientes WHERE id = ?', [id]);
 
-        if (result.affectedRows === 0) {
-            return new Response('Cliente no encontrado', { status: 404 });
-        }
+        await db.execute(`
+                            DELETE FROM creditos
+                            WHERE id_venta IN (
+                                SELECT id FROM ventas WHERE cliente_id = ?
+                            )
+                        `, [id]);
 
-        return new Response(JSON.stringify({ message: "Cliente eliminado exitosamente" }), { status: 200 });
+        await db.execute(`
+                            DELETE FROM ventas
+                            WHERE cliente_id = ?
+                        `, [id]);
+
+        await db.execute(`
+                            DELETE FROM clientes
+                            WHERE id = ?
+                        `, [id]);
+
+        return new Response(JSON.stringify({ message: 'Cliente eliminado exitosamente' }), { status: 200 });
+
 
     } catch (error) {
-        console.error('Error deleting cliente:', error);
-        return new Response('Error deleting cliente', { status: 500 });
+        console.error('Error eliminando cliente:', error);
+        return new Response(JSON.stringify({ error: String(error) }), { status: 500 });
     }
+
 }
 
 export async function PUT({ request }) {

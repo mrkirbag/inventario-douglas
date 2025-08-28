@@ -106,6 +106,8 @@ import Layout from '../layouts/Layout.astro';
 
                     const result = await res.json();
 
+                    console.log(result)
+
                     // Actualiza el array local y repinta
                     todosLosClientes = todosLosClientes.filter(c => c.id !== cliente.id);
                     clientesFiltrados = aplicarFiltro(busqueda.value);
