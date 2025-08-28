@@ -192,18 +192,15 @@ import Layout from '../layouts/Layout.astro';
         }
 
         try {
-
             const response = await fetch(`/api/reportes/productosMasVendidos?desde=${desde}&hasta=${hasta}`);
             if (!response.ok) throw new Error(`Error ${response.status}`);
             const productos = await response.json();
 
-            console.log(productos)
-
             const container = document.getElementById('reporte');
             container.innerHTML = '';
 
-            if (!Array.isArray(productos) || productos.length === 0) {
-                mostrarError("No hay productos vendidos en ese rango de fecha")
+            if (!productos || !Array.isArray(productos.mas_vendidos) || !Array.isArray(productos.menos_vendidos)) {
+                mostrarError("No hay productos vendidos en ese rango de fecha");
                 return;
             }
 
@@ -212,35 +209,44 @@ import Layout from '../layouts/Layout.astro';
             const dataTasa = await tasaFetch.json();
             const tasa = Number(dataTasa.valor);
 
-            const tabla = document.createElement('table');
-            tabla.classList.add('tabla-reportes');
+            const crearTabla = (titulo, lista) => {
+                const tabla = document.createElement('table');
+                tabla.classList.add('tabla-reportes');
 
-            tabla.innerHTML = `
-                                <thead>
-                                    <tr>
-                                    <th>Código</th>
-                                    <th>Nombre</th>
-                                    <th>Unidades Vendidas</th>
-                                    <th>Total Vendido</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${productos.map(p => `
-                                    <tr>
-                                        <td>${p.codigo_producto.toUpperCase()}</td>
-                                        <td>${p.nombre_producto.toUpperCase()}</td>
-                                        <td>${p.cantidad_total}</td>
-                                        <td>
-                                            ${p.total_usd.toFixed(2)} USD
-                                            <br />
-                                            ${Math.ceil(p.total_usd * tasa)} COP
-                                        </td>
-                                    </tr>
-                                    `).join('')}
-                                </tbody>
-                            `;
+                const encabezado = document.createElement('caption');
+                encabezado.textContent = titulo;
+                tabla.appendChild(encabezado);
 
-            container.appendChild(tabla);
+                tabla.innerHTML += `
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Unidades Vendidas</th>
+                            <th>Total Vendido</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${lista.map(p => `
+                            <tr>
+                                <td>${p.codigo_producto.toUpperCase()}</td>
+                                <td>${p.nombre_producto.toUpperCase()}</td>
+                                <td>${p.cantidad_total}</td>
+                                <td>
+                                    ${p.total_usd.toFixed(2)} USD
+                                    <br />
+                                    ${Math.ceil(p.total_usd * tasa)} COP
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                `;
+
+                return tabla;
+            };
+
+            container.appendChild(crearTabla('🟢5 productos más vendidos', productos.mas_vendidos));
+            container.appendChild(crearTabla('🔴5 productos menos vendidos', productos.menos_vendidos));
 
         } catch (error) {
             console.error('Error al generar reporte:', error);
