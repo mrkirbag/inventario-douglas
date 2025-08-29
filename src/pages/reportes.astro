@@ -23,6 +23,7 @@ import Layout from '../layouts/Layout.astro';
         <nav>
             <button id="inventario">Lista Inventario</button>
             <button id="masVendido">Productos más Vendidos</button>
+            <button id="stock">Productos con menos stock</button>
             <button id="caja">Ingresos Netos</button>
             <button id="totalVentas">Ingresos por Ventas de Contado</button>
             <button id="totalAbonos">Ingresos por Abonos</button>
@@ -97,6 +98,7 @@ import Layout from '../layouts/Layout.astro';
 
     const inventarioBtn = document.querySelector('#inventario');
     const masVendidoBtn = document.querySelector('#masVendido');
+    const stockBtn = document.querySelector('#stock');
     const totalVentasBtn = document.querySelector('#totalVentas');
     const totalAbonosBtn = document.querySelector('#totalAbonos');
     const anuladasBtn = document.querySelector('#anuladas');
@@ -247,6 +249,63 @@ import Layout from '../layouts/Layout.astro';
 
             container.appendChild(crearTabla('🟢5 productos más vendidos', productos.mas_vendidos));
             container.appendChild(crearTabla('🔴5 productos menos vendidos', productos.menos_vendidos));
+
+        } catch (error) {
+            console.error('Error al generar reporte:', error);
+            mostrarError('No se pudo generar el reporte');
+        }
+    });
+
+    // Reporte de productos mas vendidos
+    stockBtn.addEventListener('click', async (e) => {
+
+        e.preventDefault();
+
+        try {
+            const response = await fetch(`/api/reportes/menosStock`);
+            if (!response.ok) throw new Error(`Error ${response.status}`);
+            const productos = await response.json();
+
+            const container = document.getElementById('reporte');
+            container.innerHTML = '';
+
+            if (!productos || !Array.isArray(productos.bajos_en_stock) || !Array.isArray(productos.agotados)) {
+                mostrarError("No hay productos con poco stock.");
+                return;
+            }
+
+            const crearTabla = (titulo, lista) => {
+                const tabla = document.createElement('table');
+                tabla.classList.add('tabla-reportes');
+
+                const encabezado = document.createElement('caption');
+                encabezado.textContent = titulo;
+                tabla.appendChild(encabezado);
+
+                tabla.innerHTML += `
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Unidades en Inventario</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${lista.map(p => `
+                            <tr>
+                                <td>${p.codigo.toUpperCase()}</td>
+                                <td>${p.nombre.toUpperCase()}</td>
+                                <td>${p.stock}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                `;
+
+                return tabla;
+            };
+
+            container.appendChild(crearTabla('Productos con Menos Stock', productos.bajos_en_stock));
+            container.appendChild(crearTabla('Productos agotados', productos.agotados));
 
         } catch (error) {
             console.error('Error al generar reporte:', error);
