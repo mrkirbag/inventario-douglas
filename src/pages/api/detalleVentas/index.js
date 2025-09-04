@@ -31,7 +31,7 @@ export async function POST({ request }) {
     try {
 
         const body = await request.json();
-        const { ventaId, codigo_producto, nombre_producto, precio,  cantidad } = body;
+        const { ventaId, codigo, nombre, precio, cantidad } = body;
 
         // Validaciones
         const esDecimalPositivo = /^\d+(\.\d+)?$/;
@@ -41,7 +41,7 @@ export async function POST({ request }) {
         const precioUnitarioValido = esDecimalPositivo.test(precio) && parseFloat(precio) >= 0;
         
 
-        if (!ventaId || !codigo_producto || !nombre_producto || !precioUnitarioValido || !cantidadValida) {
+        if (!ventaId || !codigo || !nombre || !precioUnitarioValido || !cantidadValida) {
             return new Response('Faltan datos válidos del producto', { status: 400 });
         }
 
@@ -51,7 +51,12 @@ export async function POST({ request }) {
 
         // Insertar el nuevo cliente en la base de datos
         const result = await db.execute(`INSERT INTO detalle_venta (id_venta, codigo_producto, nombre_producto, precio_unitario, cantidad) VALUES (?, ?, ?, ?, ?)`,
-        [ventaId, codigo_producto, nombre_producto, precioUnitarioFinal, cantidadFinal]
+        [ventaId, codigo, nombre, precioUnitarioFinal, cantidadFinal]
+        );
+
+        // Descontar del stock
+        await db.execute(`UPDATE productos SET stock = stock - ? WHERE codigo = ?`,
+        [cantidadFinal, codigo]
         );
 
         return new Response(JSON.stringify({ message: "Producto registrada exitosamente en la venta" }),
@@ -63,27 +68,3 @@ export async function POST({ request }) {
     }
 }
 
-export async function DELETE({ request }) {
-    try {
-        const body = await request.json();
-        const { id } = body;
-
-        // Validar que se haya proporcionado un ID
-        if (!id) {
-            return new Response('Falta el ID del producto', { status: 400 });
-        }
-
-        // Eliminar el cliente de la base de datos
-        const result = await db.execute('DELETE FROM detalle_venta WHERE id = ?', [id]);
-
-        if (result.affectedRows === 0) {
-            return new Response('Producto no encontrado', { status: 404 });
-        }
-
-        return new Response(JSON.stringify({ message: "Producto eliminado exitosamente" }), { status: 200 });
-
-    } catch (error) {
-        console.error('Error deleting product:', error);
-        return new Response('Error deleting product', { status: 500 });
-    }
-}

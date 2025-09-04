@@ -45,23 +45,38 @@ export async function POST({ request }) {
     try {
 
         const body = await request.json();
-        const { fecha, clienteId, estado, tipoPago } = body;
+        const {fecha, tipoPago, clienteId, totalDeVenta } = body;
 
-        
-
-        if (!fecha || !clienteId || !estado || !tipoPago) {
+        if (!fecha || !clienteId || !tipoPago || !totalDeVenta) {
             return new Response('Faltan datos válidos del producto', { status: 400 });
+        }
+
+        if (totalDeVenta <= 0) {
+            return new Response('El total de la venta debe ser mayor a cero', { status: 400 });
+        }
+
+        let estado;
+
+        if (tipoPago === 'credito') {
+            estado = 'pendiente';
+        }
+        if (tipoPago === 'contado') {
+            estado = 'completado';
         }
 
         // Insertar el nuevo cliente en la base de datos
         const result = await db.execute(`INSERT INTO ventas (fecha, cliente_id, total_usd, estado, tipo_pago) VALUES (?, ?, ?, ?, ?)`,
-        [fecha, clienteId, 0, estado, tipoPago]
+        [fecha, clienteId, totalDeVenta, estado, tipoPago]
         );
-
 
         // Obtener el ID generado
         const ventaId = result.lastInsertRowid;
         const ventaIdSafe = typeof ventaId === 'bigint' ? ventaId.toString() : ventaId;
+
+        // Agregar la venta a creditos si el tipo de pago es credito
+        if (tipoPago === 'credito'){
+            await db.execute(`INSERT INTO creditos (id_venta, saldo_pendiente) VALUES (?, ?)`,[ventaIdSafe, totalDeVenta]);
+        }
 
         return new Response(JSON.stringify({ message: "Venta registrada exitosamente", ventaId: ventaIdSafe }),
         { status: 201 });
