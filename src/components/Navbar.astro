@@ -1,4 +1,7 @@
 ---
+import { verificarToken } from '../utils/auth.js';
+
+const usuario = verificarToken(Astro.request);
 ---
 
 <div class="navbar-wrapper">
@@ -8,12 +11,17 @@
         <a href="/">🏠 Inicio</a>
         <a href="/tasa">💱 Tasa del Día</a>
         <a href="/clientes">👥 Clientes</a>
-        <a href="/productos">📦 Productos</a>
         <a href="/ventas">🧾 Ventas</a>
         <a href="/creditos">💳 Créditos</a>
         <a href="/presupuestos">📊 Presupuestos</a>
-        <a href="/reportes">📈 Reportes</a>
-        <a href="/usuarios">⚙️ Usuarios</a>
+        {usuario?.rol === 'admin' && (
+            <>
+                <a href="/productos">📦 Productos</a>
+                <a href="/reportes">📈 Reportes</a>
+                <a href="/usuarios">⚙️ Usuarios</a>
+            </>
+        )}
+        <button id="logoutBtn" class="logout-btn">Cerrar sesión</button>
     </nav>
 </div>
 
@@ -90,6 +98,22 @@
             transform: translateX(0);
         }
     }
+
+    .logout-btn {
+        margin-top: .5rem;
+        background: #a51515;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: .5rem 1rem;
+        font-size: .75;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .logout-btn:hover {
+        background: #d64141;
+    }
 </style>
 
 <script type="module" is:inline>
@@ -98,5 +122,16 @@
 
     toggleBtn.addEventListener('click', () => {
         sidebar.classList.toggle('active');
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+        try {
+            const res = await fetch('/api/logout', { method: 'POST' });
+            if (res.ok) {
+                window.location.href = '/login';
+            }
+        } catch (err) {
+            alert('Error al cerrar sesión');
+        }
     });
 </script>

@@ -1,5 +1,14 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { verificarToken } from '../utils/auth.js';
+
+const usuario = verificarToken(Astro.request);
+if (!usuario) {
+    return Astro.redirect('/login');
+}
+if (usuario.rol !== 'admin') {
+    return Astro.redirect('/'); 
+}
 ---
 
 <Layout>
@@ -14,7 +23,7 @@ import Layout from '../layouts/Layout.astro';
             <tr>
                 <th>Nombre</th>
                 <th>Usuario</th>
-                <th>Clave</th>
+                <th>Rol</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -49,44 +58,18 @@ import Layout from '../layouts/Layout.astro';
 
                 const tr = document.createElement('tr');
 
-                // Crea Span para la clave
-                let claveSpan = document.createElement('span');
-                claveSpan.textContent = '••••••••'; 
-
                 tr.innerHTML = `    
-                                    <td>${usuario.nombre.toUpperCase()}</td>
+                                    <td>${usuario.nombre ? usuario.nombre.toUpperCase() : ''}</td>
                                     <td>${usuario.usuario}</td>
-                                    <td></td>
+                                    <td>${usuario.rol ? usuario.rol.toUpperCase() : ''}</td>
                                 `;
-
-                // Añade el span de la contraseña en el td vacio    
-                tr.children[2].appendChild(claveSpan);
 
                 // Botones de acciones
                 const tdAcciones = document.createElement('td');
                 tdAcciones.classList.add('acciones');
 
-                // Boton para ver contraseña
-                const btnVerClave = document.createElement('button');
-                btnVerClave.classList.add('btn-clave');
-                btnVerClave.textContent = '🔒';
-
-                let claveVisible = false;
-
-                btnVerClave.addEventListener('click', () => {
-                if (claveVisible) {
-                    claveSpan.textContent = '••••••••'; 
-                } else {
-                    claveSpan.textContent = usuario.contrasena; 
-                }
-                claveVisible = !claveVisible; 
-                btnVerClave.textContent = claveVisible ? '🔓' : '🔒';
-
-                });
-                tdAcciones.appendChild(btnVerClave)
-
                 // Boton de eliminar
-                const btnEliminar = document.createElement('button');
+                const btnEliminar = document.createElement('button');   
                 btnEliminar.classList.add('btn-eliminar');
                 btnEliminar.textContent = 'DEL';
 
@@ -110,15 +93,6 @@ import Layout from '../layouts/Layout.astro';
                     }    
                 }
                 tdAcciones.appendChild(btnEliminar);
-
-                // Boton de Editar
-                const btnEditar = document.createElement('button');
-                btnEditar.classList.add('btn-editar');
-                btnEditar.textContent = 'EDIT';
-                btnEditar.onclick = () => {
-                    window.location.href = `/usuarios/${usuario.id}`;
-                };
-                tdAcciones.appendChild(btnEditar);
 
                 // Adjuntar acciones al tr
                 tr.appendChild(tdAcciones);

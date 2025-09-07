@@ -1,0 +1,186 @@
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/png" href="/favicon.png" />
+        <title>Iniciar Sesión</title>
+    </head>
+    <body>
+    <section class="login-section">
+        <h1>Iniciar sesión</h1>
+        <form id="loginForm">
+            <div>
+                <input type="text" name="usuario" id="usuario" placeholder="Usuario" required autocomplete="username" />
+            </div>
+            <div>
+                <input type="password" name="clave" id="clave" placeholder="Contraseña" required autocomplete="current-password" />
+            </div>
+            <div>
+                <button type="submit">Ingresar</button>
+            </div>
+        </form>
+        <div id="mensaje"></div>
+    </section>
+
+    </body>
+</html>
+
+<script type="module">
+    window.addEventListener('DOMContentLoaded', () => {
+
+        const form = document.getElementById('loginForm');
+        const mensaje = document.getElementById('mensaje');
+
+        form.addEventListener('submit', async (e) => {
+            
+            e.preventDefault();
+
+            mensaje.textContent = '';
+            const usuario = document.getElementById('usuario').value.trim();
+            const clave = document.getElementById('clave').value;
+
+            if (!usuario || !clave) {
+                mensaje.textContent = 'Por favor, completa todos los campos.';
+                return;
+            }
+            
+            try {
+                const res = await fetch('/api/usuarios/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, clave })
+                    });
+                const data = await res.json();
+                if (res.ok) {
+                    mensaje.textContent = 'Login exitoso';
+                    mensaje.classList.add('success');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                } else {
+                    mensaje.textContent = data.error || 'Error al iniciar sesión';
+                    mensaje.classList.add('error');
+                    setTimeout(() => {
+                        mensaje.textContent = '';
+                        mensaje.classList.remove('error');
+                        form.reset();
+                    }, 2000);
+                }
+            } catch (err) {
+                mensaje.textContent = 'Error de conexión';
+            }
+        });
+    });
+</script>
+
+<style>
+
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #d3d3d3;
+        font-family: Arial, sans-serif;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .login-section {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2);
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-width: 320px;
+        max-width: 400px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .login-section h1 {
+        text-align: center;
+        font-size: 2rem;
+        margin-bottom: 2rem;
+        color: #1f2937;
+        font-weight: 700;
+        letter-spacing: 1px;
+    }
+
+    form {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    form div {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    input {
+        width: 300px;
+        padding: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 7px;
+        font-size: 0.9rem;
+        background: #f7f7f7;
+    }
+
+    input:focus {
+        outline: none;
+        border: 1.5px solid #1f2937;
+        background: #fff;
+    }
+
+    button[type='submit'] {
+        width: 150px;
+        background-color: #1f2937;
+        color: #fff;
+        border-radius: 5px;
+        padding: 0.5rem 1rem;
+        text-align: center;
+        font-size: 1rem;
+        font-weight: 600;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        transition: background 0.2s;
+        margin-top: 1rem;
+        align-self: center;
+    }
+
+    button[type='submit']:hover {
+        background: #4b4b8a;
+    }
+
+
+    .error {
+        background-color: #a51515;
+        color: #fff;
+        font-weight: 600;
+        text-align: center;
+        margin-top: 1rem;
+        font-size: 1.2rem;
+		padding: .5rem 1rem;
+    }
+
+    .success {
+        background-color: #008000;
+        color: #fff;
+        font-weight: 600;
+        text-align: center;
+        margin-top: 1rem;
+        font-size: 1.2rem;
+		padding: .5rem 1rem;
+    }
+</style>

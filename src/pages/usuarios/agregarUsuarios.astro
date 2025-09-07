@@ -1,5 +1,14 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import { verificarToken } from '../../utils/auth.js';
+
+const usuario = verificarToken(Astro.request);
+if (!usuario) {
+    return Astro.redirect('/login');
+}
+if (usuario.rol !== 'admin') {
+    return Astro.redirect('/'); 
+}
 ---
 
 <Layout>
@@ -15,14 +24,21 @@ import Layout from '../../layouts/Layout.astro';
                 <input type="text" name="nombre" id="nombre" placeholder="Nombre y Apellido" />
             </div>
             <div>
-                <input type="text" name="usuario" id="usuario" placeholder="Usuario" />
+                <input type="text" name="usuario" id="usuario" placeholder="Usuario" autocomplete="username"/>
+            </div>
+            <div>
+                <select name="rol" id="rol">
+                    <option value="" disabled selected>Seleccionar rol</option>
+                    <option value="admin">Administrador</option>
+                    <option value="empleado">Empleado</option>
+                </select>
             </div>
             <div class="password-container">
-                <input type="password" name="contrasena" id="contrasena" placeholder="Contraseña" />
+                <input type="password" name="contrasena" id="contrasena" placeholder="Contraseña" autocomplete="new-password"/>
                 <span id="verContrasena">👁️</span>
             </div>
             <div class="password-container">
-                <input type="password" name="contrasena2" id="contrasena2" placeholder="Repetir contraseña" />
+                <input type="password" name="contrasena2" id="contrasena2" placeholder="Repetir contraseña" autocomplete="new-password"/>
                 <span id="verContrasena2">👁️</span>
             </div>
             <button type="submit">Agregar</button>
@@ -59,6 +75,7 @@ import Layout from '../../layouts/Layout.astro';
         const usuario = document.getElementById('usuario').value;
         const contrasena = document.getElementById('contrasena').value;
         const contrasena2 = document.getElementById('contrasena2').value;
+        const rol = document.getElementById('rol').value;
 
         // Validar que las contrasenas coincidan
         if(contrasena !== contrasena2){
@@ -67,18 +84,18 @@ import Layout from '../../layouts/Layout.astro';
         }
 
         // Validar campos vacios
-        if (nombre === '' || usuario === '' || contrasena === '' || contrasena2 === '' ) {
+        if (nombre === '' || usuario === '' || contrasena === '' || contrasena2 === '' || rol === '') {
             mostrarError('Todos los campos son obligatorios.'); 
             return;
         }
 
         try{
-            const response = await fetch("/api/usuarios", {
+            const response = await fetch("/api/usuarios/registrar", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ nombre, usuario, contrasena })
+                body: JSON.stringify({ nombre, usuario, contrasena, rol })
             });
 
             if(!response.ok){

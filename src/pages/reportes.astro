@@ -1,5 +1,14 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { verificarToken } from '../utils/auth.js';
+
+const usuario = verificarToken(Astro.request);
+if (!usuario) {
+    return Astro.redirect('/login');
+}
+if (usuario.rol !== 'admin') {
+    return Astro.redirect('/'); 
+}
 ---
 
 <Layout>
@@ -24,11 +33,8 @@ import Layout from '../layouts/Layout.astro';
             <button id="inventario">Lista Inventario</button>
             <button id="masVendido">Productos más Vendidos</button>
             <button id="stock">Productos con menos stock</button>
-            <button id="caja">Ingresos Netos</button>
-            <button id="totalVentas">Ingresos por Ventas de Contado</button>
-            <button id="totalAbonos">Ingresos por Abonos</button>
+            <button id="caja">Ventas Totales</button>
             <button id="anuladas">Ventas Anuladas</button>
-            <button id="creditos">Ventas a Crédito</button>
         </nav>
     </section>
 
@@ -89,7 +95,6 @@ import Layout from '../layouts/Layout.astro';
     }
     }
 
-
 </style>
 
 <script type="module" is:inline>
@@ -99,10 +104,7 @@ import Layout from '../layouts/Layout.astro';
     const inventarioBtn = document.querySelector('#inventario');
     const masVendidoBtn = document.querySelector('#masVendido');
     const stockBtn = document.querySelector('#stock');
-    const totalVentasBtn = document.querySelector('#totalVentas');
-    const totalAbonosBtn = document.querySelector('#totalAbonos');
     const anuladasBtn = document.querySelector('#anuladas');
-    const creditosBtn = document.querySelector('#creditos');
     const cajaBtn = document.querySelector('#caja');
 
     // Reporte de todo el inventario
@@ -256,7 +258,7 @@ import Layout from '../layouts/Layout.astro';
         }
     });
 
-    // Reporte de productos mas vendidos
+    // Reporte de productos con menos stock
     stockBtn.addEventListener('click', async (e) => {
 
         e.preventDefault();
@@ -306,181 +308,6 @@ import Layout from '../layouts/Layout.astro';
 
             container.appendChild(crearTabla('Productos con Menos Stock', productos.bajos_en_stock));
             container.appendChild(crearTabla('Productos agotados', productos.agotados));
-
-        } catch (error) {
-            console.error('Error al generar reporte:', error);
-            mostrarError('No se pudo generar el reporte');
-        }
-    });
-
-    // Reporte de ingresos de contado
-    totalVentasBtn.addEventListener('click', async (e) =>{
-
-        e.preventDefault();
-
-        const desde = document.querySelector('#desde').value;
-        const hasta = document.querySelector('#hasta').value;
-
-        // Validaciones de las fechas
-        if (desde === '' || hasta === '') {
-            mostrarError('Debe seleccionar ambas fechas');
-            return;
-        }
-        if (hasta < desde) {
-            mostrarError('La fecha final no puede ser menor que la inicial');
-            return;
-        }
-
-        try {
-
-            const response = await fetch(`/api/reportes/ventasTotales?desde=${desde}&hasta=${hasta}`);
-            if (!response.ok) throw new Error(`Error ${response.status}`);
-            const ventas = await response.json();
-
-            const container = document.getElementById('reporte');
-            container.innerHTML = '';
-
-            if (!Array.isArray(ventas) || ventas.length === 0) {
-                mostrarError("No hay ventas en ese rango de fecha")
-                return;
-            }
-
-            // Obtener tasa de cambio
-            const tasaFetch = await fetch('/api/tasa');
-            const dataTasa = await tasaFetch.json();
-            const tasa = Number(dataTasa.valor);
-
-            const tabla = document.createElement('table');
-            tabla.classList.add('tabla-reportes');
-
-            tabla.innerHTML = `
-                                <thead>
-                                    <tr>
-                                        <th>Fecha</th>
-                                        <th>Cliente</th>
-                                        <th>Monto</th>
-                                        <th>Tipo de Pago</th>
-                                        <th>Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${ventas.map(v => `
-                                    <tr>
-                                        <td>
-                                            ${new Date(v.fecha_venta + "T00:00:00").toLocaleDateString("es-ES", {
-                                                day: "2-digit",
-                                                month: "2-digit",
-                                                year: "numeric"
-                                            })}
-                                        </td>
-                                        <td>
-                                            ${v.nombre_cliente.toUpperCase()}
-                                            <br />
-                                            C.I. ${v.cedula_cliente}    
-                                        </td>
-                                        <td>
-                                            ${v.total_usd.toFixed(2)} USD
-                                            <br />
-                                            ${Math.ceil(v.total_usd * tasa)} COP
-                                        </td>
-                                        <td>${v.tipo_pago.toUpperCase()}</td>
-                                        <td>${v.estado.toUpperCase()}</td>
-                                    </tr>
-                                    `).join('')}
-                                </tbody>
-                            `;
-
-            container.appendChild(tabla);
-
-        } catch (error) {
-            console.error('Error al generar reporte:', error);
-            mostrarError('No se pudo generar el reporte');
-        }
-    });
-
-    // Reporte de ingresos por abonos
-    totalAbonosBtn.addEventListener('click', async (e) =>{
-
-        e.preventDefault();
-
-        const desde = document.querySelector('#desde').value;
-        const hasta = document.querySelector('#hasta').value;
-
-        // Validaciones de las fechas
-        if (desde === '' || hasta === '') {
-            mostrarError('Debe seleccionar ambas fechas');
-            return;
-        }
-        if (hasta < desde) {
-            mostrarError('La fecha final no puede ser menor que la inicial');
-            return;
-        }
-
-        try {
-
-            const response = await fetch(`/api/reportes/abonos?desde=${desde}&hasta=${hasta}`);
-            if (!response.ok) throw new Error(`Error ${response.status}`);
-            const ventas = await response.json();
-
-            const container = document.getElementById('reporte');
-            container.innerHTML = '';
-
-            if (!Array.isArray(ventas) || ventas.length === 0) {
-                mostrarError("No hay abonos en ese rango de fecha")
-                return;
-            }
-
-            // Obtener tasa de cambio
-            const tasaFetch = await fetch('/api/tasa');
-            const dataTasa = await tasaFetch.json();
-            const tasa = Number(dataTasa.valor);
-
-            const tabla = document.createElement('table');
-            tabla.classList.add('tabla-reportes');
-
-            tabla.innerHTML = `
-                                <thead>
-                                    <tr>
-                                        <th>Fecha del Abono</th>
-                                        <th>Cliente</th>
-                                        <th>Monto</th>
-                                        <th>Fecha de Inicio de la Venta</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${ventas.map(v => `
-                                    <tr>
-                                        <td>
-                                            ${new Date(v.fecha_abono + "T00:00:00").toLocaleDateString("es-ES", {
-                                                day: "2-digit",
-                                                month: "2-digit",
-                                                year: "numeric"
-                                            })}
-                                        </td>
-                                        <td>
-                                            ${v.nombre_cliente.toUpperCase()}
-                                            <br />
-                                            C.I. ${v.cedula_cliente}    
-                                        </td>
-                                        <td>
-                                            ${v.monto_abono.toFixed(2)} USD
-                                            <br />
-                                            ${Math.ceil(v.monto_abono * tasa)} COP
-                                        </td>
-                                        <td>
-                                            ${new Date(v.fecha_venta_credito + "T00:00:00").toLocaleDateString("es-ES", {
-                                                day: "2-digit",
-                                                month: "2-digit",
-                                                year: "numeric"
-                                            })}
-                                        </td>
-
-                                    </tr>
-                                    `).join('')}
-                                </tbody>
-                            `;
-
-            container.appendChild(tabla);
 
         } catch (error) {
             console.error('Error al generar reporte:', error);
@@ -572,92 +399,7 @@ import Layout from '../layouts/Layout.astro';
             mostrarError('No se pudo generar el reporte');
         }
     });
-
-    // Reporte de creditos dados
-    creditosBtn.addEventListener('click', async (e) =>{
-
-        e.preventDefault();
-
-        const desde = document.querySelector('#desde').value;
-        const hasta = document.querySelector('#hasta').value;
-
-        // Validaciones de las fechas
-        if (desde === '' || hasta === '') {
-            mostrarError('Debe seleccionar ambas fechas');
-            return;
-        }
-        if (hasta < desde) {
-            mostrarError('La fecha final no puede ser menor que la inicial');
-            return;
-        }
-
-        try {
-
-            const response = await fetch(`/api/reportes/ventasCreditos?desde=${desde}&hasta=${hasta}`);
-            if (!response.ok) throw new Error(`Error ${response.status}`);
-            const ventas = await response.json();
-
-            const container = document.getElementById('reporte');
-            container.innerHTML = '';
-
-            if (!Array.isArray(ventas) || ventas.length === 0) {
-                mostrarError("No hay ventas a crédito en ese rango de fecha.")
-                return;
-            }
-
-            // Obtener tasa de cambio
-            const tasaFetch = await fetch('/api/tasa');
-            const dataTasa = await tasaFetch.json();
-            const tasa = Number(dataTasa.valor);
-
-            const tabla = document.createElement('table');
-            tabla.classList.add('tabla-reportes');
-
-            tabla.innerHTML = `
-                                <thead>
-                                    <tr>
-                                        <th>Fecha</th>
-                                        <th>Cliente</th>
-                                        <th>Monto</th>
-                                        <th>Tipo de Pago</th>
-                                        <th>Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${ventas.map(v => `
-                                    <tr>
-                                        <td>
-                                            ${new Date(v.fecha_venta + "T00:00:00").toLocaleDateString("es-ES", {
-                                                day: "2-digit",
-                                                month: "2-digit",
-                                                year: "numeric"
-                                            })}
-                                        </td>
-                                        <td>
-                                            ${v.nombre_cliente.toUpperCase()}
-                                            <br />
-                                            C.I. ${v.cedula_cliente}    
-                                        </td>
-                                        <td>
-                                            ${v.total_usd.toFixed(2)} USD
-                                            <br />
-                                            ${Math.ceil(v.total_usd * tasa)} COP
-                                        </td>
-                                        <td>${v.tipo_pago.toUpperCase()}</td>
-                                        <td>${v.estado.toUpperCase()}</td>
-                                    </tr>
-                                    `).join('')}
-                                </tbody>
-                            `;
-
-            container.appendChild(tabla);
-
-        } catch (error) {
-            console.error('Error al generar reporte:', error);
-            mostrarError('No se pudo generar el reporte');
-        }
-    });
-
+        
     // Reporte de ingresos netos
     cajaBtn.addEventListener('click', async (e) =>{
 
@@ -682,12 +424,10 @@ import Layout from '../layouts/Layout.astro';
             if (!response.ok) throw new Error(`Error ${response.status}`);
             const ventas = await response.json();
 
-            console.log(ventas)
+            console.log(ventas.resumen);
 
             const container = document.getElementById('reporte');
             container.innerHTML = '';
-
-            console.log(ventas)
 
             if (ventas.length === 0) {
                 mostrarError("No hubo ingresos en ese rango de fecha.")
@@ -701,7 +441,6 @@ import Layout from '../layouts/Layout.astro';
 
             const tabla = document.createElement('table');
             tabla.classList.add('tabla-reportes');
-
             tabla.innerHTML = `
                                 <thead>
                                     <tr>
@@ -715,29 +454,175 @@ import Layout from '../layouts/Layout.astro';
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td>${ventas.ventas_contado}</td>
-                                        <td>${ventas.abonos_realizados}</td>
+                                        <td>${ventas.resumen.ventas_contado}</td>
+                                        <td>${ventas.resumen.abonos_realizados}</td>
                                         <td>
-                                            ${ventas.total_ventas_contado.toFixed(2)} USD<br />
-                                            ${Math.ceil(ventas.total_ventas_contado * tasa)} COP
+                                            ${ventas.resumen.total_ventas_contado.toFixed(2)} USD<br />
+                                            ${Math.ceil(ventas.resumen.total_ventas_contado * tasa)} COP
                                         </td>
                                         <td>
-                                            ${ventas.total_abonos_realizados.toFixed(2)} USD<br />
-                                            ${Math.ceil(ventas.total_abonos_realizados * tasa)} COP
+                                            ${ventas.resumen.total_abonos_realizados.toFixed(2)} USD<br />
+                                            ${Math.ceil(ventas.resumen.total_abonos_realizados * tasa)} COP
                                         </td>
                                         <td>
-                                            ${ventas.ingresos_totales.toFixed(2)} USD<br />
-                                            ${Math.ceil(ventas.ingresos_totales * tasa)} COP
+                                            ${Number(ventas.resumen.total_ventas_contado + ventas.resumen.total_abonos_realizados).toFixed(2)} USD<br />
+                                            ${Math.ceil((ventas.resumen.total_ventas_contado + ventas.resumen.total_abonos_realizados) * tasa)} COP
                                         </td>
                                         <td>
-                                            ${ventas.ganancia_neta.toFixed(2)} USD<br />
-                                            ${Math.ceil(ventas.ganancia_neta * tasa)} COP
+                                            ${ventas.resumen.margen_ganancia.toFixed(2)} USD<br />
+                                            ${Math.ceil(ventas.resumen.margen_ganancia * tasa)} COP
                                         </td>
                                     </tr>
                                 </tbody>
                             `;
 
             container.appendChild(tabla);
+
+            // Mostrar tablas detalladas
+
+            // Tabla de ventas contado
+            const tablaContado = document.createElement('table');
+            tablaContado.classList.add('tabla-reportes');
+            tablaContado.innerHTML = `
+                <caption>Ventas a Contado</caption>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Monto Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${ventas.ventasContadoDetalle.map(v => `
+                        <tr>
+                            <td>
+                                ${(() => {
+                                    const fechaObjeto = new Date(v.fecha + "T00:00:00");
+                                    const opcionesFormato = { day: "2-digit", month: "2-digit", year: "numeric" };
+                                    return fechaObjeto.toLocaleDateString("es-ES", opcionesFormato);
+                                })()}
+                            </td>
+                            <td>${v.cliente.toUpperCase()}</td>
+                            <td>
+                                ${(typeof v.total_usd === 'number' ? v.total_usd.toFixed(2) : '0.00')} USD
+                                <br />
+                                ${Math.ceil(v.total_usd * tasa)} COP
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="1"><b>Nro. registros:</b> ${ventas.resumen.ventas_contado}</td>
+                        <td colspan="2"><b>Total ingresado:</b> 
+                            ${(typeof ventas.resumen.total_ventas_contado === 'number' ? ventas.resumen.total_ventas_contado.toFixed(2) : '0.00')} USD
+                            <br />
+                            ${Math.ceil(ventas.resumen.total_ventas_contado * tasa)} COP
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="3"><b>Margen de ganancia:</b> 
+                            ${(typeof ventas.resumen.margen_ganancia === 'number' ? ventas.resumen.margen_ganancia.toFixed(2) : '0.00')} USD
+                            <br />
+                            ${Math.ceil(ventas.resumen.margen_ganancia * tasa)} COP
+                        </td>
+                    </tr>
+                </tfoot>
+            `;
+            container.appendChild(tablaContado);
+
+            // Tabla de ventas crédito
+            const tablaCredito = document.createElement('table');
+            tablaCredito.classList.add('tabla-reportes');
+            tablaCredito.innerHTML = `
+                <caption>Ventas a Crédito</caption>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Monto Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${ventas.ventasCreditoDetalle.map(v => `
+                        <tr>
+                            <td>
+                                ${(() => {
+                                    const fechaObjeto = new Date(v.fecha + "T00:00:00");
+                                    const opcionesFormato = { day: "2-digit", month: "2-digit", year: "numeric" };
+                                    return fechaObjeto.toLocaleDateString("es-ES", opcionesFormato);
+                                })()}
+                            </td>
+                            <td>${v.cliente.toUpperCase()}</td>
+                            <td>
+                                ${(typeof v.total_usd === 'number' ? v.total_usd.toFixed(2) : '0.00')} USD
+                                <br />
+                                ${Math.ceil(v.total_usd * tasa)} COP
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="1"><b>Nro. registros:</b> ${ventas.resumen.ventas_credito}</td>
+                        <td colspan="2"><b>Total ingresado:</b> 
+                            ${(typeof ventas.resumen.total_ventas_credito === 'number' ? ventas.resumen.total_ventas_credito.toFixed(2) : '0.00')} USD
+                            <br />
+                            ${Math.ceil(ventas.resumen.total_ventas_credito * tasa)} COP
+                        </td>
+                    </tr>
+                </tfoot>
+            `;
+            container.appendChild(tablaCredito);
+
+            // Tabla de abonos
+            const tablaAbonos = document.createElement('table');
+            tablaAbonos.classList.add('tabla-reportes');
+            tablaAbonos.innerHTML = `
+                <caption>Abonos realizados</caption>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Monto Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${ventas.abonosDetalle.map(a => `
+                        <tr>
+                            <td>
+                                ${(() => {
+                                    const fechaObjeto = new Date(a.fecha + "T00:00:00");
+                                    const opcionesFormato = { day: "2-digit", month: "2-digit", year: "numeric" };
+                                    return fechaObjeto.toLocaleDateString("es-ES", opcionesFormato);
+                                })()}
+                            </td>
+                            <td>${a.cliente.toUpperCase()}</td>
+                            <td>
+                                ${(typeof a.monto === 'number' ? a.monto.toFixed(2) : '0.00')} USD
+                                <br />
+                                ${Math.ceil(a.monto * tasa)} COP
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="1"><b>Nro. abonos:</b> ${ventas.resumen.abonos_realizados}</td>
+                        <td colspan="2"><b>Total abonos:</b> 
+                            ${(typeof ventas.resumen.total_abonos_realizados === 'number' ? ventas.resumen.total_abonos_realizados.toFixed(2) : '0.00')} USD
+                            <br />
+                            ${Math.ceil(ventas.resumen.total_abonos_realizados * tasa)} COP
+                        </td>
+                    </tr>
+                </tfoot>
+            `;
+            container.appendChild(tablaAbonos);
+
+            // 4. Total en caja
+            const totalCaja = document.createElement('div');
+            totalCaja.innerHTML = `<h3>Total en caja: ${(typeof ventas.resumen.total_en_caja === 'number' ? ventas.resumen.total_en_caja.toFixed(2) : '0.00')} USD</h3>`;
+            container.appendChild(totalCaja);
 
         } catch (error) {
             console.error('Error al generar reporte:', error);
